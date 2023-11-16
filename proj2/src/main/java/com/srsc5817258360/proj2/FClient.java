@@ -1,4 +1,4 @@
-package client;
+package com.srsc5817258360.proj2;
 
 import io.netty.channel.ChannelOption;
 import org.springframework.boot.SpringApplication;
