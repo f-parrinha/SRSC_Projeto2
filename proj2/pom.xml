@@ -17,12 +17,12 @@
 		<java.version>17</java.version>
 		<authors>5817258360</authors>
 	</properties>
+  
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -34,7 +34,7 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
+  
 	<build>
 		<plugins>
 			<plugin>
@@ -68,7 +68,6 @@
 						</goals>
 					</execution>
 				</executions>
-
 				<configuration>
 					<images>
 						<image>
@@ -91,5 +90,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>
