@@ -1,6 +1,7 @@
 package com.srsc5817258360.proj2;
 
 import io.netty.channel.ChannelOption;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.http.HttpHeaders;
@@ -11,7 +12,6 @@ import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
 
-@SpringBootApplication
 public class FClient {
 
     private final WebClient webClient;
@@ -25,10 +25,6 @@ public class FClient {
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .defaultHeader(HttpHeaders.ACCEPT, "application/json")
                 .build();
-    }
-
-    public static void main(String[] args) {
-        SpringApplication.run(FClient.class, args);
     }
 
     public Mono<String> getHelloWorld() {
