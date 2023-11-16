@@ -13,6 +13,12 @@ Uses microservices for its execution, having four modules:
 - Main dispatcher with a RESTful API to dispatch the requests to the different components
 - One component for the remaining modules
 
+### Usage
+Run "mvn clean compile assembly:single docker:build" to build a single assembly and a docker image with the .jar file
+Run "docker run -it --rm --entrypoint bash srsc5817258360" to run the image created on a docker environment
+Run "java -cp proj2-0.0.1-SNAPSHOT-jar-with-dependencies.jar com.srsc5817258360.proj2.FClientShell" to run the client shell program
+
+
 ### Requirements
 ![image](https://github.com/f-parrinha/SRSC_Projeto2/assets/113953185/fd26bb2b-8c09-4be2-a772-7843f003d296)
 
