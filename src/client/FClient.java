@@ -1,11 +1,9 @@
 package client;
 
 import io.netty.channel.ChannelOption;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -13,12 +11,12 @@ import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
 
-@Component
-public class FServerClient {
+@SpringBootApplication
+public class FClient {
 
-    private WebClient webClient;
+    private final WebClient webClient;
 
-    public FServerClient(String URL) {
+    public FClient(String URL) {
         HttpClient httpClient = HttpClient.create()
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000);
         webClient = WebClient.builder()
@@ -29,6 +27,9 @@ public class FServerClient {
                 .build();
     }
 
+    public static void main(String[] args) {
+        SpringApplication.run(FClient.class, args);
+    }
 
     public Mono<String> getHelloWorld() {
         return webClient.get()
