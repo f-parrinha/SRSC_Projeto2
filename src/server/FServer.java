@@ -1,11 +1,13 @@
-package server.accessControl;
+package server;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class Main {
+public abstract class FServer {
+
     public static void main(String[] args) {
-        System.out.println("Hello world!");
+        SpringApplication.run(FServer.class, args);
     }
 }
+
