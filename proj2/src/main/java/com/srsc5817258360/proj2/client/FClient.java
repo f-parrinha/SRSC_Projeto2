@@ -1,4 +1,4 @@
-package com.srsc5817258360.proj2;
+package com.srsc5817258360.proj2.client;
 
 import io.netty.channel.ChannelOption;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
 
-public class FClient {
+public abstract class FClient {
 
     private final WebClient webClient;
 
@@ -25,12 +25,6 @@ public class FClient {
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .defaultHeader(HttpHeaders.ACCEPT, "application/json")
                 .build();
-    }
 
-    public Mono<String> getHelloWorld() {
-        return webClient.get()
-                .uri("/helloWorld")
-                .retrieve()
-                .bodyToMono(String.class);
     }
 }

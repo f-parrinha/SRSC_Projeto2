@@ -1,4 +1,4 @@
-package com.srsc5817258360.proj2;
+package com.srsc5817258360.proj2.client;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -31,7 +31,7 @@ public class FClientShell implements CommandLineRunner{
     }
 
     public FClientShell() {
-        client = new FClient(SERVER_URL);
+        client = new FDispatcherClient(SERVER_URL);
         reader = new BufferedReader(new InputStreamReader(System.in));
     }
 
@@ -69,7 +69,7 @@ public class FClientShell implements CommandLineRunner{
 
     private void helloworldCommand(){
         System.out.println("Requesting 'helloworld'..");
-        client.getHelloWorld();
+
     }
 
     private void lsCommand() {
