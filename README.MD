@@ -14,10 +14,11 @@ Uses microservices for its execution, having four modules:
 - One component for the remaining modules
 
 ## Usage
-Follow these steps to compile, launch the client and the servers
-- Run "mvn clean compile assembly:single docker:build" to build a single assembly and a docker image with the .jar file
-- Run "docker run -it --rm --entrypoint bash srsc5817258360" to run the image created on a docker environment
-- Run "java -cp proj2-0.0.1-SNAPSHOT-jar-with-dependencies.jar com.srsc5817258360.proj2.client.FClientShell" to run the client shell program
+Follow these steps to compile, launch the client and the servers:
+- **MANDATORY**: Make sure the working directory is "proj2", inside the project folder
+- ***Run*** "mvn clean compile assembly:single docker:build" to build a single assembly and a docker image with the .jar file
+- ***Run*** "docker run -it --rm --entrypoint bash srsc5817258360" to run the image created on a docker environment
+- ***Run*** "java -cp proj2-0.0.1-SNAPSHOT-jar-with-dependencies.jar com.srsc5817258360.proj2.client.FClientShell" to run the client shell program
 
 <br />
 <br />
