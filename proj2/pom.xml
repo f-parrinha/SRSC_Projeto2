@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.srsc-58172-58360</groupId>
-	<artifactId>proj2</artifactId>
+	<artifactId>FServer</artifactId>
 	<version>0.0.1</version>
 	<name>FServer</name>
 	<description>Project 2 for Network Security and Computer Systems</description>
