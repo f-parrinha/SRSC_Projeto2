@@ -14,7 +14,7 @@ import reactor.netty.http.client.HttpClient;
 
 public abstract class FClient {
 
-    private final WebClient webClient;
+    protected final WebClient webClient;
 
     public FClient(String URL) {
         HttpClient httpClient = HttpClient.create()
