@@ -22,12 +22,16 @@ public class FClientShell implements CommandLineRunner{
     private final BufferedReader reader;
     private final FClient client;
 
-    //@TODO Extend for the remaining commands
-    private enum Input{
+    private enum Input {
         exit,
+        login,
+        mkdir,
+        put,
+        get,
+        rm,
         ls,
         cp,
-        helloworld
+        file
     }
 
     public FClientShell() {
@@ -56,27 +60,52 @@ public class FClientShell implements CommandLineRunner{
      * @param command input command
      */
     private void executeCommand(String command) {
-        if(command.equals(Input.ls.toString())) {
+        if (command.equals(Input.login.toString())) {
+            loginCommand();
+        } else if(command.equals(Input.mkdir.toString())) {
+            mkdirCommand();
+        } else if (command.equals(Input.put.toString())) {
+            putCommand();
+        } else if (command.equals(Input.get.toString())) {
+            getCommand();
+        } else if (command.equals(Input.rm.toString())) {
+            rmCommand();
+        } else if (command.equals(Input.ls.toString())) {
             lsCommand();
         } else if (command.equals(Input.cp.toString())) {
             cpCommand();
-        } else if (command.equals(Input.helloworld.toString())) {
-            helloworldCommand();
+        } else if (command.equals(Input.file.toString())) {
+            fileCommand();
         } else {
             System.out.println(DEFAULT_ERROR_MESSAGE);
         }
     }
 
-    private void helloworldCommand(){
-        System.out.println("Requesting 'helloworld'..");
 
+    /** -- Command Execution -- */
+
+    private void loginCommand() {
+        System.out.println("(WIP) Executed 'login' command.");
     }
-
+    private  void mkdirCommand() {
+        System.out.println("(WIP) Executed 'mkdir' command.");
+    }
+    private void putCommand() {
+        System.out.println("(WIP) Executed 'put' command.");
+    }
+    private void getCommand() {
+        System.out.println("(WIP) Executed 'get' command.");
+    }
+    private void rmCommand() {
+        System.out.println("(WIP) Executed 'rm' command.");
+    }
     private void lsCommand() {
         System.out.println("(WIP) Executed 'ls' command.");
     }
-
     private void cpCommand() {
         System.out.println("(WIP) Executed 'cp' command.");
+    }
+    private void fileCommand() {
+        System.out.println("(WIP) Executed 'file' command.");
     }
 }
