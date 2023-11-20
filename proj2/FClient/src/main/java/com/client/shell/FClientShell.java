@@ -20,7 +20,7 @@ public class FClientShell implements CommandLineRunner{
     /** Constants */
     private static final String DASH = "> ";
     private static final String EMPTY = " ";
-    private static final String SERVER_URL = "https://localhost:8080";
+    private static final String SERVER_URL = "http://localhost:8081";
     private static final String DEFAULT_ERROR_MESSAGE = DASH+ "Unknown command.\n" + DASH;
     private static final String DEFAULT_WELCOME_MESSAGE = DASH + "Welcome to the FServer platform!\n" + DASH;
 
