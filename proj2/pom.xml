@@ -9,10 +9,16 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.srsc-58172-58360</groupId>
-	<artifactId>FServer</artifactId>
+	<artifactId>proj2</artifactId>
 	<version>0.0.1</version>
-	<name>FServer</name>
+	<packaging>pom</packaging>
+	<name>Project2</name>
 	<description>Project 2 for Network Security and Computer Systems</description>
+	<modules>
+		<module>FServer</module>
+        <module>FClient</module>
+		<module>API</module>
+	</modules>
 	<properties>
 		<java.version>17</java.version>
 		<authors>58172-58360</authors>
