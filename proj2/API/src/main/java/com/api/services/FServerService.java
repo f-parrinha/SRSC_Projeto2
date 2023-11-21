@@ -26,6 +26,15 @@ public interface FServerService {
      */
     Mono<ResponseEntity<String>> listFiles(String username);
 
+
+    /**
+     * Requests "ls" command
+     * @param username who is requesting
+     * @param path directory path to list the files
+     * @return response (text)
+     */
+    Mono<ResponseEntity<String>> listFiles(String username, String path);
+
     /**
      * Requests "mkdir" command
      * @param username who is requesting

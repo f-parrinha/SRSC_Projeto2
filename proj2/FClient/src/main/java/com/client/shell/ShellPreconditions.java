@@ -7,9 +7,10 @@ package com.client.shell;
  * @author Francisco Parrinha   58360
  */
 public class ShellPreconditions {
+    public static final String DEFAULT_WRONG_ARG_SIZES_ERROR = "No expected arg sizes were given. ";
     public static final String WRONG_ARGS_MESSAGE = "Wrong argument list. Make sure you are following the right pattern ";
     public static final String LOGIN_ARGS = "'login username password'";
-    public static final String LS_ARGS = "'ls username'";
+    public static final String LS_ARGS = "'ls username' or 'ls username path'";
     public static final String MKDIR_ARGS = "'mkdir username path'";
     public static final String PUT_ARGS = "'put username path/file'";
     public static final String GET_ARGS = "'get username path/file'";
@@ -20,10 +21,29 @@ public class ShellPreconditions {
     /**
      * Checks if the given argument list size is wrong or not, considering a given desired size
      * @param args argument list
-     * @param expectedArgsSize the expected size
+     * @param argsString the args accepted by this method in string. Used in combination with an error message
+     * @param argSizes the set of sizes that are meant to be verified
      * @return true if wrong, false if correct
      */
-    public boolean wrongArgSize(String[] args, int expectedArgsSize) {
-        return args.length != expectedArgsSize;
+    public static boolean wrongArgSize(String[] args, String argsString, int ... argSizes) {
+        if (argSizes.length == 0) { FClientShell.printError(DEFAULT_WRONG_ARG_SIZES_ERROR); return true; }
+
+        for (int n : argSizes) {
+            if (n == (args.length - 1)) {
+                return false;
+            }
+        }
+
+        FClientShell.printError(WRONG_ARGS_MESSAGE + argsString);
+        return true;
+    }
+
+    /**
+     * Checks whether the given input is empty or not
+     * @param input the user input, tokenized
+     * @return true if empty, false if not
+     */
+    public static boolean noCommandGiven(String[] input) {
+        return input.length == 0 || input[0].isEmpty();
     }
 }
