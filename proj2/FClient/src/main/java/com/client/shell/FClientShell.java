@@ -82,7 +82,7 @@ public class FClientShell implements CommandLineRunner{
         String command = input[0];
 
         if (command.equals(Command.login.toString())) {
-            loginCommand();
+            loginCommand(input);
         } else if (command.equals(Command.ls.toString())) {
             lsCommand(input);
         } else if(command.equals(Command.mkdir.toString())) {
@@ -105,8 +105,29 @@ public class FClientShell implements CommandLineRunner{
 
     /** -- Command Execution -- */
 
-    private void loginCommand() {
-        System.out.println("(WIP) Executed 'login' command.");
+    private void loginCommand(String[] input) {
+
+        // Check args size
+        if(preconditions.wrongArgSize(input, 3)) {
+            System.out.println(ShellPreconditions.WRONG_ARGS_MESSAGE + ShellPreconditions.LOGIN_ARGS);
+            return;
+        }
+
+        // Generate request
+        String username = input[1];
+        String password = input[2];
+        var response = client.login(username,password);
+
+        // Process response
+        response.subscribe(
+                result -> {
+                    System.out.println("Result: " + result);
+                },
+                error -> {
+                    System.err.println("Error: " + error.getMessage());
+                },
+                () -> { /* Leaving empty... */ }
+        );
     }
     private void lsCommand(String[] input) {
 
