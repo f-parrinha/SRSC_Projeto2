@@ -37,6 +37,14 @@ public class FClient extends AbstractClient implements FServerService {
     }
 
     @Override
+    public Mono<ResponseEntity<String>> listFiles(String username, String path) {
+        return webClient.get()
+                .uri("/ls/{username}/{path}", username, path)
+                .retrieve()
+                .toEntity(String.class);
+    }
+
+    @Override
     public Mono<ResponseEntity<String>> makeDirectory(String username, String path) {
         return webClient.post()
                 .uri("/mkdir/{username}/{path}", username, path)

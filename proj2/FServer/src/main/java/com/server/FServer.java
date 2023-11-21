@@ -58,7 +58,7 @@ public class FServer {
     }
 
     @GetMapping("/ls/{username}/{path}")
-    public Mono<ResponseEntity<String>> listFilesAtPath(@PathVariable String username, @PathVariable String path) {
+    public Mono<ResponseEntity<String>> listFiles(@PathVariable String username, @PathVariable String path) {
         return Mono.just(ResponseEntity.ok("Lista de arquivos/diretórios para " + username + " no caminho " + path));
     }
 
