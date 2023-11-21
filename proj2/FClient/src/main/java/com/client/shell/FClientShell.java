@@ -5,9 +5,13 @@ import com.client.shell.commands.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.PropertySource;
 
+import javax.net.ssl.SSLException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * Class  FClientShell  creates an interactive shell to communicate with the FServer
@@ -16,6 +20,7 @@ import java.io.InputStreamReader;
  * @author Francisco Parrinha   58360
  */
 @SpringBootApplication
+@PropertySource("classpath:application.yml")
 public class FClientShell implements CommandLineRunner{
 
     /** Constants */
@@ -34,8 +39,8 @@ public class FClientShell implements CommandLineRunner{
     private final FClient client;
 
 
-    public FClientShell() {
-        client = new FClient(SERVER_URL);
+    public FClientShell() throws URISyntaxException, SSLException {
+        client = new FClient(new URI(SERVER_URL));
         reader = new BufferedReader(new InputStreamReader(System.in));
     }
 

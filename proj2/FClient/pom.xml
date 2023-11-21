@@ -17,6 +17,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+
     <dependencies>
         <dependency>
             <groupId>com.srsc-58172-58360</groupId>
@@ -24,5 +25,4 @@
             <version>0.0.1</version>
         </dependency>
     </dependencies>
-
 </project>

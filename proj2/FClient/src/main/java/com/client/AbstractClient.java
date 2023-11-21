@@ -2,12 +2,18 @@ package com.client;
 
 import com.client.shell.FClientShell;
 import io.netty.channel.ChannelOption;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
+
+import javax.net.ssl.SSLException;
+import java.net.URI;
 
 
 /**
@@ -18,30 +24,48 @@ import reactor.netty.http.client.HttpClient;
  */
 public abstract class AbstractClient {
 
+    /** Constants */
+    public static final String MEDIA_TYPE = "application/json";
+
     /** Variables */
     protected final WebClient webClient;
 
 
     /**
      * Constructor
-     * @param URL FServer URL
+     * @param uri FServer URI
      */
-    public AbstractClient(String URL) {
-        HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000);
-        webClient = WebClient.builder()
-                .clientConnector(new ReactorClientHttpConnector(httpClient))
-                .baseUrl(URL)
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .defaultHeader(HttpHeaders.ACCEPT, "application/json")
-                .build();
+    public AbstractClient(URI uri) throws SSLException {
+        this.webClient = createWebClient(uri);
+    }
 
+    /**
+     * Creates a WebClient using TLS protocol
+     * @param uri FServer URI
+     * @return Spring WebClient
+     * @throws SSLException SSLContext errors
+     */
+    public WebClient createWebClient (URI uri) throws SSLException {
+        SslContext sslContext = SslContextBuilder
+                .forClient()
+                .trustManager(InsecureTrustManagerFactory.INSTANCE)
+                .build();
+        HttpClient httpClient = HttpClient.create()
+                .secure(t -> t.sslContext(sslContext))
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000);
+
+        return WebClient.builder()
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .baseUrl(uri.toString())
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE)
+                .defaultHeader(HttpHeaders.ACCEPT, MEDIA_TYPE)
+                .build();
     }
 
     /**
      * Reads a response from the server and prints the correct results (errors and content)
      * Follows a subscriber/publisher pattern
-     * @param response reponse from the server
+     * @param response response from the server
      */
     public void readResponse(Mono<ResponseEntity<String>> response) {
         if (response == null) {

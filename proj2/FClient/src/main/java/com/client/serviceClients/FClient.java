@@ -6,6 +6,9 @@ import com.api.services.FServerService;
 import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
 
+import javax.net.ssl.SSLException;
+import java.net.URI;
+
 /**
  * Class  FDispatcherClient  offers tools to create requests to the FServer (Dispatcher module)
  *
@@ -14,8 +17,8 @@ import reactor.core.publisher.Mono;
  */
 
 public class FClient extends AbstractClient implements FServerService {
-    public FClient(String URL){
-        super(URL);
+    public FClient(URI uri) throws SSLException {
+        super(uri);
     }
 
 

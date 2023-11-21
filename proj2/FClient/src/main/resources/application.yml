@@ -1,0 +1,11 @@
+spring:
+  main:
+    web-application-type: none
+
+server:
+  port: 8082
+  ssl:
+    enabled: true
+    trust-store: client-ts.jks
+    trust-store-password: 123users
+    trust-store-type: JKS

@@ -17,19 +17,18 @@ cp cacerts client-ts.jks
 # Genereates keystores and certificates for all servers
 for str in ${SERVERS[@]}
 do
+
 # Generates one keystore file for one server
-keytool -genkey -alias $str -keyalg RSA -validity 365 -keystore ./$str.jks -storetype pkcs12 -ext SAN=dns:$str << EOF
-123users
-123users
-Users.Users
-TP2
-SD2223
+keytool -genkeypair -keyalg RSA -keysize 2048 -validity 365 -storetype pkcs12 -ext -alias $str -keystore ./$str.jks SAN=dns:$str << EOF
+secret
+secret
+SR.SC
+P2
+FCT
 LX
 LX
 PT
 yes
-123users
-123users
 EOF
 
 # Exports certificate
