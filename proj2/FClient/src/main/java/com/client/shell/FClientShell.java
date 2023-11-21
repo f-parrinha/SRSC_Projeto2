@@ -1,6 +1,7 @@
 package com.client.shell;
 
 import com.client.serviceClients.FClient;
+import com.client.shell.commands.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -18,32 +19,24 @@ import java.io.InputStreamReader;
 public class FClientShell implements CommandLineRunner{
 
     /** Constants */
+    private static final String SERVER_URL = "http://localhost:8081";
     private static final String DASH = "> ";
     private static final String EMPTY = " ";
-    private static final String SERVER_URL = "http://localhost:8081";
-    private static final String DEFAULT_ERROR_MESSAGE = DASH+ "Unknown command.\n" + DASH;
-    private static final String DEFAULT_WELCOME_MESSAGE = DASH + "Welcome to the FServer platform!\n" + DASH;
+    public static final String RESULT_ENTRY = "RESULT: ";
+    public static final String FINE_ENTRY = "FINE: ";
+    public static final String ERROR_ENTRY = "ERROR: ";
+    private static final String DEFAULT_ERROR_MESSAGE = "Unknown command.";
+    private static final String DEFAULT_EXIT_MESSAGE = "Closing client.. See you next time! :)";
+    private static final String DEFAULT_WELCOME_MESSAGE = "Welcome to the FServer platform!";
 
     /** Variables */
     private final BufferedReader reader;
-    private final FClient client;   /*@TODO Use client to create requests on the command execution methods */
-    private final ShellPreconditions preconditions;
-    private enum Command {
-        exit,
-        login,
-        ls,
-        mkdir,
-        put,
-        get,
-        cp,
-        rm,
-        file
-    }
+    private final FClient client;
+
 
     public FClientShell() {
         client = new FClient(SERVER_URL);
         reader = new BufferedReader(new InputStreamReader(System.in));
-        preconditions = new ShellPreconditions();
     }
 
     public static void main(String[] args) {
@@ -55,15 +48,45 @@ public class FClientShell implements CommandLineRunner{
         String input = "";
 
         // Start execution
-        System.out.println(DEFAULT_WELCOME_MESSAGE);
-        while (!input.equals(Command.exit.toString())) {
-            System.out.print(DASH);
-
-            input = reader.readLine();
-            String[] tokens = input.trim().split(EMPTY);
-
-            executeCommand(tokens);
+        printLine(DEFAULT_WELCOME_MESSAGE);
+        while (!input.equalsIgnoreCase(Command.Type.exit.toString())) {
+            executeCommand(reader.readLine().trim().split(EMPTY));
         }
+    }
+
+    /**
+     * Prints a new custom line starting with a "> " on the shell interface
+     * @param text the output text
+     */
+    public static void printLine(String text){
+        if(text.isEmpty()) { System.out.print(DASH); return;}
+
+        System.out.println(DASH + text);
+        System.out.print(DASH);
+    }
+
+    /**
+     * Prints text with a 'result' label
+     * @param text result to print
+     */
+    public static void printResult(String text) {
+        printLine(RESULT_ENTRY + text);
+    }
+
+    /**
+     * Prints text with a 'fine' label
+     * @param text text to print
+     */
+    public static void printFine(String text) {
+        printLine(FINE_ENTRY + text);
+    }
+
+    /**
+     * Prints text with a 'error' label
+     * @param text error to print
+     */
+    public static void printError(String text) {
+        printLine(ERROR_ENTRY + text);
     }
 
     /**
@@ -71,82 +94,32 @@ public class FClientShell implements CommandLineRunner{
      * @param input input command
      */
     private void executeCommand(String[] input) {
-
-        // Skips if input is empty
-        if(!preconditions.wrongArgSize(input, 0)) {
-            System.out.println(DASH);
-            return;
-        }
+        if(ShellPreconditions.noCommandGiven(input)) { printLine(""); return; }    // Check empty input
 
         // Read command
-        String command = input[0];
+        String commandInput = input[0];
 
-        if (command.equals(Command.login.toString())) {
-            loginCommand();
-        } else if (command.equals(Command.ls.toString())) {
-            lsCommand(input);
-        } else if(command.equals(Command.mkdir.toString())) {
-            mkdirCommand();
-        } else if (command.equals(Command.put.toString())) {
-            putCommand();
-        } else if (command.equals(Command.get.toString())) {
-            getCommand();
-        } else if (command.equals(Command.cp.toString())) {
-            cpCommand();
-        } else if (command.equals(Command.rm.toString())) {
-            rmCommand();
-        } else if (command.equals(Command.file.toString())) {
-            fileCommand();
+        if (commandInput.equalsIgnoreCase(Command.Type.login.toString())) {
+            new LoginCommand(client).execute(input);
+        } else if (commandInput.equalsIgnoreCase(Command.Type.ls.toString())) {
+            new LsCommand(client).execute(input);
+        } else if(commandInput.equalsIgnoreCase(Command.Type.mkdir.toString())) {
+            new MkDirCommand(client).execute(input);
+        } else if (commandInput.equalsIgnoreCase(Command.Type.put.toString())) {
+            new PutCommand(client).execute(input);
+        } else if (commandInput.equalsIgnoreCase(Command.Type.get.toString())) {
+            new GetCommand(client).execute(input);
+        } else if (commandInput.equalsIgnoreCase(Command.Type.cp.toString())) {
+            new CpCommand(client).execute(input);
+        } else if (commandInput.equalsIgnoreCase(Command.Type.rm.toString())) {
+            new RmCommand(client).execute(input);
+        } else if (commandInput.equalsIgnoreCase(Command.Type.file.toString())) {
+            new FileCommand(client).execute(input);
+        } else if (commandInput.equalsIgnoreCase(Command.Type.exit.toString())) {
+            printFine(DEFAULT_EXIT_MESSAGE);
+            System.exit(0);
         } else {
-            System.out.println(DEFAULT_ERROR_MESSAGE);
+            printError(DEFAULT_ERROR_MESSAGE);
         }
-    }
-
-
-    /** -- Command Execution -- */
-
-    private void loginCommand() {
-        System.out.println("(WIP) Executed 'login' command.");
-    }
-    private void lsCommand(String[] input) {
-
-        // Check args size
-        if(preconditions.wrongArgSize(input, 2)) {
-            System.out.println(ShellPreconditions.WRONG_ARGS_MESSAGE + ShellPreconditions.LS_ARGS);
-            return;
-        }
-
-        // Generate request
-        String username = input[1];
-        var response = client.listFiles(username);
-
-        // Process response
-        response.subscribe(
-            result -> {
-                System.out.println("Result: " + result);
-            },
-            error -> {
-                System.err.println("Error: " + error.getMessage());
-            },
-            () -> { /* Leaving empty... */ }
-        );
-    }
-    private  void mkdirCommand() {
-        System.out.println("(WIP) Executed 'mkdir' command.");
-    }
-    private void putCommand() {
-        System.out.println("(WIP) Executed 'put' command.");
-    }
-    private void getCommand() {
-        System.out.println("(WIP) Executed 'get' command.");
-    }
-    private void cpCommand() {
-        System.out.println("(WIP) Executed 'cp' command.");
-    }
-    private void rmCommand() {
-        System.out.println("(WIP) Executed 'rm' command.");
-    }
-    private void fileCommand() {
-        System.out.println("(WIP) Executed 'file' command.");
     }
 }
