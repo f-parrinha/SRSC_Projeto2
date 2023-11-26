@@ -1,17 +1,25 @@
 package com.client.shell;
 
+import com.api.common.tls.TLSClientConfig;
 import com.client.serviceClients.FClient;
 import com.client.shell.commands.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
-import javax.net.ssl.SSLException;
 import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.util.Objects;
 
 /**
  * Class  FClientShell  creates an interactive shell to communicate with the FServer
@@ -20,11 +28,17 @@ import java.net.URISyntaxException;
  * @author Francisco Parrinha   58360
  */
 @SpringBootApplication
-@PropertySource("classpath:application.yml")
+@Configuration
+@Component
 public class FClientShell implements CommandLineRunner{
 
     /** Constants */
-    private static final String SERVER_URL = "http://localhost:8081";
+    public static final InputStream CONFIG_PATH = FClientShell.class.getClassLoader().getResourceAsStream("clienttls.conf");
+    public static final InputStream KEYSTORE_FILE= FClientShell.class.getClassLoader().getResourceAsStream( "client-ks.jks");
+    public static final InputStream TRUSTSTORE_FILE = FClientShell.class.getClassLoader().getResourceAsStream( "client-ts.jks");
+    public static final String KEYSTORE_PASS = "password";      /* Place this in a secure file *** ignored by git!! *** */
+    public static final String TRUSTSTORE_PASS = "password";    /* Place this in a secure file *** ignored by git!! *** */
+    private static final String DISPATCHER_URL = "https://localhost:8081";
     private static final String DASH = "> ";
     private static final String EMPTY = " ";
     public static final String RESULT_ENTRY = "RESULT: ";
@@ -38,9 +52,16 @@ public class FClientShell implements CommandLineRunner{
     private final BufferedReader reader;
     private final FClient client;
 
+    public FClientShell() throws URISyntaxException, IOException, NoSuchAlgorithmException, CertificateException, KeyStoreException, UnrecoverableKeyException {
+        TLSClientConfig tls = new TLSClientConfig.Builder()
+                .withConfigFile(CONFIG_PATH)
+                .withKeyStoreFile(KEYSTORE_FILE)
+                .withKeyStorePass(KEYSTORE_PASS)
+                .withTrustStoreFile(TRUSTSTORE_FILE)
+                .withTrustStorePass(TRUSTSTORE_PASS)
+                .build();
 
-    public FClientShell() throws URISyntaxException, SSLException {
-        client = new FClient(new URI(SERVER_URL));
+        client = new FClient(new URI(DISPATCHER_URL), tls.getSslContext());
         reader = new BufferedReader(new InputStreamReader(System.in));
     }
 

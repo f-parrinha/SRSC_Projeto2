@@ -1,10 +1,7 @@
 package com.client;
 
 import com.client.shell.FClientShell;
-import io.netty.channel.ChannelOption;
 import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -12,7 +9,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
-import javax.net.ssl.SSLException;
 import java.net.URI;
 
 
@@ -30,32 +26,24 @@ public abstract class AbstractClient {
     /** Variables */
     protected final WebClient webClient;
 
-
     /**
      * Constructor
+     *
      * @param uri FServer URI
      */
-    public AbstractClient(URI uri) throws SSLException {
-        this.webClient = createWebClient(uri);
+    public AbstractClient(URI uri, SslContext sslContext) {
+        this.webClient = createWebClient(uri, sslContext);
     }
 
     /**
      * Creates a WebClient using TLS protocol
      * @param uri FServer URI
      * @return Spring WebClient
-     * @throws SSLException SSLContext errors
      */
-    public WebClient createWebClient (URI uri) throws SSLException {
-        SslContext sslContext = SslContextBuilder
-                .forClient()
-                .trustManager(InsecureTrustManagerFactory.INSTANCE)
-                .build();
-        HttpClient httpClient = HttpClient.create()
-                .secure(t -> t.sslContext(sslContext))
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000);
-
+    public WebClient createWebClient (URI uri, SslContext sslContext) {
         return WebClient.builder()
-                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .clientConnector(new ReactorClientHttpConnector(HttpClient.create()
+                        .secure(sslContextSpec -> sslContextSpec.sslContext(sslContext))))
                 .baseUrl(uri.toString())
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE)
                 .defaultHeader(HttpHeaders.ACCEPT, MEDIA_TYPE)

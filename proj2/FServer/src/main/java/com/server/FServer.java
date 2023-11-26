@@ -1,12 +1,20 @@
 package com.server;
 
 import com.api.LoginRequest;
+import com.api.common.tls.TLSServerConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.PropertySource;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
+import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.util.Objects;
 
 
 /**
@@ -19,16 +27,40 @@ import reactor.core.publisher.Mono;
  */
 @SpringBootApplication
 @RestController
+@Configuration
 public class FServer {
-//    private final FAuthClient authClient;
-//    private final FAccessControlClient accessControlClient;
-//    private final FStorageClient fStorageClient;
-//
-//    public FServer(FAuthClient authClient, FAccessControlClient accessControlClient, FStorageClient fStorageClient) {
-//        this.authClient = authClient;
-//        this.accessControlClient = accessControlClient;
-//        this.fStorageClient = fStorageClient;
-//    }
+
+    /** Constants */
+    public static final int PORT = 8081;
+    public static final InputStream CONFIG_FILE = FServer.class.getClassLoader().getResourceAsStream("servertls.conf");
+    public static final String KEYSTORE_PATH = "classpath:fserver-dispatcher-ks.jks";
+    public static final String KEYSTORE_PASS = "password";  /* Place this in a secure file *** ignored by git!! *** */
+    public static final String KEY_ALIAS = "fserver-dispatcher";
+    public static final String KEY_PASS = "password";   /* Place this in a secure file *** ignored by git!! *** */
+    public static final String TRUSTSTORE_PATH = "classpath:fserver-dispatcher-ts.jks";
+    public static final String TRUSTSTORE_PASS = "password";
+
+    @Bean
+    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> webServerFactoryCustomizer() {
+        return factory -> {
+            try {
+                TLSServerConfig tls = new TLSServerConfig.Builder()
+                        .withConfigFile(CONFIG_FILE)
+                        .withKeyStorePath(KEYSTORE_PATH)
+                        .withKeyStorePass(KEYSTORE_PASS)
+                        .withKeyAlias(KEY_ALIAS)
+                        .withKeyPass(KEY_PASS)
+                        .withTrustStorePath(TRUSTSTORE_PATH)
+                        .withTrustStorePass(TRUSTSTORE_PASS)
+                        .build();
+
+                factory.setSsl(tls.getSslContext());
+                factory.setPort(PORT);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
 
     public static void main(String[] args) {
         SpringApplication.run(FServer.class, args);

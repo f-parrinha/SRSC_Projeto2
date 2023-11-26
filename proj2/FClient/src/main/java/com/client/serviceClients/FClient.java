@@ -3,11 +3,17 @@ package com.client.serviceClients;
 import com.client.AbstractClient;
 import com.api.LoginRequest;
 import com.api.services.FServerService;
+import io.netty.handler.ssl.SslContext;
+import org.springframework.boot.web.server.Ssl;
 import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
 
-import javax.net.ssl.SSLException;
+import java.io.IOException;
 import java.net.URI;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 
 /**
  * Class  FDispatcherClient  offers tools to create requests to the FServer (Dispatcher module)
@@ -17,8 +23,8 @@ import java.net.URI;
  */
 
 public class FClient extends AbstractClient implements FServerService {
-    public FClient(URI uri) throws SSLException {
-        super(uri);
+    public FClient(URI uri, SslContext sslContext) {
+        super(uri, sslContext);
     }
 
 
@@ -72,9 +78,12 @@ public class FClient extends AbstractClient implements FServerService {
 
     @Override
     public Mono<ResponseEntity<String>> copy(String username, String sourcePath, String sourceFile, String destPath, String destFile) {
+        System.out.println(sourcePath);
+        System.out.println(sourceFile);
+        String path = "/cp/"+username+"/"+sourcePath+"/"+sourceFile+"/"+destPath+"/"+destFile;
+        System.out.println(path);
         return webClient.post()
-                .uri("/cp/{username}/{sourcePath}/{sourceFile}/{destPath}/{destFile}",
-                        username, sourcePath, sourceFile, destPath, destFile)
+                .uri(path)
                 .retrieve()
                 .toEntity(String.class);
     }
