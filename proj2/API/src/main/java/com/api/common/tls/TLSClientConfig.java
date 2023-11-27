@@ -1,19 +1,13 @@
 package com.api.common.tls;
 
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
+import com.api.common.shell.Shell;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.TrustManagerFactory;
-import java.io.*;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
+import javax.net.ssl.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * Class  TLSClientConfig  configures an SSL Context with custom configs for a netty client
@@ -21,56 +15,27 @@ import java.util.List;
  * @author Martin Magdalinchev  58172
  * @author Francisco Parrinha   58360
  */
-public class TLSClientConfig extends AbstractTLSConfig implements TLSConfig<SslContext> {
+public class TLSClientConfig extends AbstractTLSConfig implements TLSConfig<SSLContext> {
 
     /** Constants */
-    public static final String STORE_TYPE = "JKS";
+    public static final String MANAGER_TYPE = "SunX509";
 
     /** Variables */
-    private SslContext sslContext;
-    private Iterable<String> protocols;
-    private Iterable<String> ciphers;
-    private TrustManagerFactory trustManagerFactory;
-    private KeyManagerFactory keyManagerFactory;
+    private SSLContext sslContext;
+    private SSLParameters sslParameters;
     private InputStream keyStoreFile;
     private InputStream trustStoreFile;
 
-
     @Override
-    public void readConfigFile() {
-        if (configFile == null) {
-            System.out.println(DEFAULT_CONFIG_FILE_ERROR);
-            return;
-        }
-
-        // Try to read file
-        try (InputStreamReader reader = new InputStreamReader(configFile)){
-            BufferedReader bufferedReader = new BufferedReader(reader);
-
-            // Assign read values
-            this.protocols = List.of(bufferedReader.readLine().split(":")[1].trim());
-            this.auth = bufferedReader.readLine().split(":")[1];
-            this.ciphers = List.of(bufferedReader.readLine().split(":")[1].trim());
-        } catch (IOException e) {
-            System.out.println(Arrays.toString(e.getStackTrace()));
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public SslContext buildSslContext() throws SSLException {
-        return SslContextBuilder.forClient()
-                .protocols(protocols)
-                .ciphers(ciphers)
-                .keyManager(keyManagerFactory)
-                .trustManager(trustManagerFactory)
-                .build();
-    }
-
-    @Override
-    public SslContext getSslContext() {
+    public SSLContext getSslContext() {
         return sslContext;
     }
+    public SSLParameters getSslParameters() {
+        return sslParameters;
+    }
+    @Override
+    public void setSslContext(SSLContext context) { sslContext = context; }
+    public void setSslParameters(SSLParameters parameters) { sslParameters = parameters; }
     public void setKeyStoreFile(InputStream file) {
         keyStoreFile = file;
     }
@@ -78,59 +43,38 @@ public class TLSClientConfig extends AbstractTLSConfig implements TLSConfig<SslC
         trustStoreFile = file;
     }
 
-    /**
-     * Initiates trustStores, keyStores and their managers
-     * @throws NoSuchAlgorithmException wrong store algorithm
-     * @throws UnrecoverableKeyException bug with key
-     * @throws KeyStoreException exception during keyStore usage
-     * @throws CertificateException wrong certificate
-     * @throws IOException input output problems
-     */
-    public void initTrustMaterial() throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException, CertificateException, IOException {
-        // Setup keyStores and trustStores
+    @Override
+    public void printSSLConfigs() {
+        Shell.printDebug("SSL Configurations:");
+        Shell.printDebug(" - Protocols: " + Arrays.toString(sslParameters.getProtocols()));
+        Shell.printDebug(" - Ciphers: " + Arrays.toString(sslParameters.getCipherSuites()));
+    }
+
+    @Override
+    public SSLContext buildSslContext() throws IOException, KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException, CertificateException, KeyManagementException {
         KeyStore keyStore = KeyStore.getInstance(STORE_TYPE);
         KeyStore trustStore = KeyStore.getInstance(STORE_TYPE);
+        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(MANAGER_TYPE);
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(MANAGER_TYPE);
+
+        // Load keyStores
         keyStore.load(keyStoreFile, keyStorePass.toCharArray());
         trustStore.load(trustStoreFile, trustStorePass.toCharArray());
 
-        // Init trust and key manager factories
-        keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        // Init managers
         keyManagerFactory.init(keyStore, keyStorePass.toCharArray());
         trustManagerFactory.init(trustStore);
+
+        // Define ssl context
+        SSLContext ssl = SSLContext.getInstance(TLS_PROTOCOL);
+        ssl.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), new SecureRandom());
+        return ssl;
     }
 
-    public static class Builder {
-        private final TLSClientConfig tls;
-        public Builder(){
-            tls = new TLSClientConfig();
-        }
-
-        public TLSClientConfig build() throws IOException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException {
-            tls.readConfigFile();
-            tls.initTrustMaterial();
-            this.tls.sslContext = tls.buildSslContext();
-            return tls;
-        }
-        public Builder withConfigFile(InputStream configFile) throws FileNotFoundException {
-            this.tls.setConfigFile(configFile);
-            return this;
-        }
-        public Builder withKeyStoreFile(InputStream file) {
-            this.tls.setKeyStoreFile(file);
-            return this;
-        }
-        public Builder withTrustStoreFile(InputStream file) {
-            this.tls.setTrustStoreFile(file);
-            return this;
-        }
-        public Builder withKeyStorePass(String pass) {
-            this.tls.setKeyStorePass(pass);
-            return this;
-        }
-        public Builder withTrustStorePass(String pass) {
-            this.tls.setTrustStorePass(pass);
-            return this;
-        }
+    public SSLParameters buildSslParameters() {
+        SSLParameters params = new SSLParameters();
+        params.setCipherSuites(ciphers);
+        params.setProtocols(protocols);
+        return params;
     }
 }

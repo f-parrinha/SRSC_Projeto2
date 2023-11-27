@@ -1,15 +1,15 @@
 package com.client;
 
-import com.client.shell.FClientShell;
-import io.netty.handler.ssl.SslContext;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
-import reactor.netty.http.client.HttpClient;
+import com.client.shell.ClientShell;
+import org.springframework.http.HttpStatus;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.Objects;
 
 
 /**
@@ -21,32 +21,32 @@ import java.net.URI;
 public abstract class AbstractClient {
 
     /** Constants */
-    public static final String MEDIA_TYPE = "application/json";
-
-    /** Variables */
-    protected final WebClient webClient;
+    public static final Duration TIMEOUT = Duration.ofSeconds(10);
+    protected final HttpClient client;
+    protected final URI baseUri;
 
     /**
      * Constructor
-     *
      * @param uri FServer URI
+     * @param sslContext custom SSLContext object to configure TLS communication
+     * @param sslParameters custom SSLParameters object to configure TLS communication
      */
-    public AbstractClient(URI uri, SslContext sslContext) {
-        this.webClient = createWebClient(uri, sslContext);
+    public AbstractClient(URI uri, SSLContext sslContext, SSLParameters sslParameters) {
+        this.client = createHttpsClient(sslContext, sslParameters);
+        this.baseUri = uri;
     }
 
     /**
-     * Creates a WebClient using TLS protocol
-     * @param uri FServer URI
-     * @return Spring WebClient
+     * Creates a HTTPS client (TLS protocol) with custom SSL configurations
+     * @param sslContext custom SSLContext object to configure TLS communication
+     * @param sslParameters custom SSLParameters object to configure TLS communication
+     * @return HTTPS client with custom SSL configs
      */
-    public WebClient createWebClient (URI uri, SslContext sslContext) {
-        return WebClient.builder()
-                .clientConnector(new ReactorClientHttpConnector(HttpClient.create()
-                        .secure(sslContextSpec -> sslContextSpec.sslContext(sslContext))))
-                .baseUrl(uri.toString())
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE)
-                .defaultHeader(HttpHeaders.ACCEPT, MEDIA_TYPE)
+    public HttpClient createHttpsClient(SSLContext sslContext, SSLParameters sslParameters) {
+        return HttpClient.newBuilder()
+                .connectTimeout(TIMEOUT)
+                .sslParameters(sslParameters)
+                .sslContext(sslContext)
                 .build();
     }
 
@@ -55,21 +55,19 @@ public abstract class AbstractClient {
      * Follows a subscriber/publisher pattern
      * @param response response from the server
      */
-    public void readResponse(Mono<ResponseEntity<String>> response) {
+    public void readResponse(HttpResponse<String> response) {
         if (response == null) {
-            FClientShell.printError("Response is null. Check if the request is being sent");
+            ClientShell.printError("Response is null. Check if the request is being sent");
             return;
         }
 
-        // Subscribe to check response status (subscriber/publisher pattern...)
-        response.subscribe(
-                result -> {
-                    FClientShell.printResult(result.getBody());
-                },
-                error -> {
-                    FClientShell.printResult(error.getMessage());
-                },
-                () -> { /* Leaving empty... */ }
-        );
+        HttpStatus status = HttpStatus.resolve(response.statusCode());
+        switch (Objects.requireNonNull(status)) {
+            case OK -> ClientShell.printResult(response.body());
+            case NOT_FOUND -> ClientShell.printError("Not Found");
+            case BAD_REQUEST -> ClientShell.printError("Bad Request");
+            case FORBIDDEN -> ClientShell.printError("Forbidden");
+            default -> ClientShell.printError("Unexpected value -> " + status);
+        }
     }
 }

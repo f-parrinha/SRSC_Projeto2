@@ -1,13 +1,15 @@
-package com.server.auth;
+package com.server.modules;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.RestController;
 
 @SpringBootApplication
 @RestController
-public class FServerAuth {
+@Repository
+public class FServerStorage {
     public static void main(String[] args) {
-        SpringApplication.run(FServerAuth.class, args);
+        SpringApplication.run(FServerStorage.class, args);
     }
 }

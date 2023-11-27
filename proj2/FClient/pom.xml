@@ -47,7 +47,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.client.shell.FClientShell</mainClass>
+                                    <mainClass>com.client.shell.ClientShell</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>

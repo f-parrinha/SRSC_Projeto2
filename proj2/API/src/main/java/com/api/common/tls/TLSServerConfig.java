@@ -1,8 +1,8 @@
 package com.api.common.tls;
 
+import com.api.common.shell.Shell;
 import org.springframework.boot.web.server.Ssl;
 
-import java.io.*;
 import java.util.Arrays;
 
 
@@ -14,45 +14,18 @@ import java.util.Arrays;
  */
 public class TLSServerConfig extends AbstractTLSConfig implements TLSConfig<Ssl> {
 
-    /** Constants */
-    public static final String STORE_TYPE = "JKS";
-
     /** Variables */
     private String keyAlias;
     private String keyPass;
     private Ssl sslContext;
-    private String protocol;
-    private String[] ciphers;
 
-
-    /**
-     * Reads the configuration file to assign config values
-     */
-    @Override
-    public void readConfigFile() {
-        if (configFile == null) {
-            System.out.println(DEFAULT_CONFIG_FILE_ERROR);
-            return;
-        }
-
-        // Try to read file
-        try (InputStreamReader reader = new InputStreamReader(configFile)){
-            BufferedReader bufferedReader = new BufferedReader(reader);
-
-            // Assign read values
-            this.protocol = bufferedReader.readLine().split(":")[1].trim();
-            this.auth = bufferedReader.readLine().split(":")[1];
-            this.ciphers = bufferedReader.readLine().split(":")[1].trim().split("\\s,\\s");
-        } catch (IOException e) {
-            System.out.println(Arrays.toString(e.getStackTrace()));
-            throw new RuntimeException(e);
-        }
-    }
 
     @Override
     public Ssl getSslContext() {
         return sslContext;
     }
+    @Override
+    public void setSslContext(Ssl context) { sslContext = context; }
     public void setKeyAlias(String keyAlias) {
         this.keyAlias = keyAlias;
     }
@@ -60,15 +33,12 @@ public class TLSServerConfig extends AbstractTLSConfig implements TLSConfig<Ssl>
         this.keyPass = keyPass;
     }
 
-    /**
-     * Creates a new SSL Context for the Tomcat servlet
-     * @return SpringBoot Ssl
-     */
     @Override
     public Ssl buildSslContext() {
         Ssl ssl = new Ssl();
-        ssl.setProtocol(protocol);
+        ssl.setProtocol(TLS_PROTOCOL);
         ssl.setCiphers(ciphers);
+        ssl.setEnabledProtocols(protocols);
         ssl.setKeyStoreType(STORE_TYPE);
         ssl.setKeyStore(keyStorePath);
         ssl.setKeyStorePassword(keyStorePass);
@@ -77,50 +47,16 @@ public class TLSServerConfig extends AbstractTLSConfig implements TLSConfig<Ssl>
         ssl.setTrustStoreType(STORE_TYPE);
         ssl.setTrustStore(trustStorePath);
         ssl.setTrustStorePassword(trustStorePass);
+        ssl.setClientAuth(auth == AuthType.SERV ? Ssl.ClientAuth.NONE : Ssl.ClientAuth.WANT);
         ssl.setEnabled(true);
 
         return ssl;
     }
 
-
-    public static class Builder {
-        private final TLSServerConfig tls;
-        public Builder(){
-            tls = new TLSServerConfig();
-        }
-
-        public TLSServerConfig build() {
-            tls.readConfigFile();
-            this.tls.sslContext = tls.buildSslContext();
-            return tls;
-        }
-        public Builder withConfigFile(InputStream configFile) throws FileNotFoundException {
-            this.tls.setConfigFile(configFile);
-            return this;
-        }
-        public Builder withKeyStorePath(String path) {
-            this.tls.setKeyStorePath(path);
-            return this;
-        }
-        public Builder withKeyStorePass(String pass) {
-            this.tls.setKeyStorePass(pass);
-            return this;
-        }
-        public Builder withKeyAlias(String alias) {
-            this.tls.setKeyAlias(alias);
-            return this;
-        }
-        public Builder withKeyPass(String pass) {
-            this.tls.setKeyPass(pass);
-            return this;
-        }
-        public Builder withTrustStorePath(String path) {
-            this.tls.setTrustStorePath(path);
-            return this;
-        }
-        public Builder withTrustStorePass(String pass) {
-            this.tls.setTrustStorePass(pass);
-            return this;
-        }
+    @Override
+    public void printSSLConfigs() {
+        Shell.printDebug("SSL Configurations:");
+        Shell.printDebug(" - Protocol : " + Arrays.toString(sslContext.getEnabledProtocols()));
+        Shell.printDebug(" - Ciphers  : " + Arrays.toString(sslContext.getCiphers()));
     }
 }

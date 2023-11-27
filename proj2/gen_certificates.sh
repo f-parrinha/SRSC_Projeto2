@@ -103,7 +103,7 @@ echo "########### For '$str' ###########"
 echo
 echo - Creating KeyStore
 echo
-keytool -genkeypair -keyalg RSA -keysize 2048 -keystore ./"$str"-ks.jks -validity 365 -alias "$str" -storepass "$secret" -keypass "$secret"<< EOF
+keytool -genkeypair -keyalg RSA -keysize 2048 -keystore ./"$str"-ks.jks -validity 365 -alias "$str" -storepass "$secret" -keypass "$secret" -dname CN=localhost -ext SAN=dns:localhost<< EOF
 SR.SC
 P2
 FCT
@@ -118,7 +118,7 @@ echo
 echo
 echo - Exporting Certificate
 echo
-keytool -export -file "$str".crt -keystore "$str"-ks.jks -storepass "$secret" -alias "$str" << EOF
+keytool -export -file "$str".crt -keystore "$str"-ks.jks -storepass "$secret" -alias "$str" -dname CN=localhost -ext SAN=dns:localhost << EOF
 $secret
 EOF
 
@@ -139,14 +139,16 @@ EOF
 # Imports certificate
 echo
 echo
-echo - Importing Certificate into Client Truststore
+echo - Importing Server Certificate into Client Truststore
 echo
-keytool -import -file "$str".crt -keystore "$clientStoreName"-ts.jks -storepass "$trustedSecret" -alias "$str" << EOF
+keytool -import -file "$str".crt -keystore "$clientStoreName"-ts.jks -storepass "$trustedSecret" -alias "$str" -dname CN=localhost -ext SAN=dns:localhost << EOF
 yes
 EOF
 echo
 echo
 echo - Imported server certificate to client truststore
+echo
+echo - Importing Client Certificate into Server Truststore
 echo
 keytool -import -file "$clientStoreName".crt -keystore "$str"-ts.jks -storepass "$secret" -alias client-ts << EOF
 yes

@@ -1,5 +1,7 @@
 package com.client.shell.commands;
 
+import java.io.IOException;
+
 /**
  * Interface  Command  defines the blueprint of a command
  * It follows the "Command Pattern" design pattern
@@ -28,5 +30,5 @@ public interface Command {
      * Main command execution
      * @param input input by user. Set of tokens
      */
-    void execute(String[] input);
+    void execute(String[] input) throws IOException, InterruptedException;
 }

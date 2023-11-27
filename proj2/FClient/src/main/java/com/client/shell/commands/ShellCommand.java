@@ -1,6 +1,6 @@
 package com.client.shell.commands;
 
-import com.client.serviceClients.FClient;
+import com.client.serviceClients.FDispatcherClient;
 
 /**
  * Abstract Class  ShellCommand  defines the basics of command ran by the shell.
@@ -15,14 +15,14 @@ public abstract class ShellCommand {
     private static final char SLASH_CHAR = '/';
 
     /** Variables */
-    protected FClient client;
+    protected FDispatcherClient client;
 
 
     /**
      * Constructor
      * @param client is an FClient
      */
-    public ShellCommand(FClient client) {
+    public ShellCommand(FDispatcherClient client) {
         this.client = client;
     }
 

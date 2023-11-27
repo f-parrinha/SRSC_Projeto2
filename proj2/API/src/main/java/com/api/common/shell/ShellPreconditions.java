@@ -1,4 +1,4 @@
-package com.client.shell;
+package com.api.common.shell;
 
 /**
  * Class  ShellPreconditions  offers precondition tools for the client shell
@@ -26,7 +26,7 @@ public class ShellPreconditions {
      * @return true if wrong, false if correct
      */
     public static boolean wrongArgSize(String[] args, String argsString, int ... argSizes) {
-        if (argSizes.length == 0) { FClientShell.printError(DEFAULT_WRONG_ARG_SIZES_ERROR); return true; }
+        if (argSizes.length == 0) { Shell.printError(DEFAULT_WRONG_ARG_SIZES_ERROR); return true; }
 
         for (int n : argSizes) {
             if (n == (args.length - 1)) {
@@ -34,7 +34,7 @@ public class ShellPreconditions {
             }
         }
 
-        FClientShell.printError(WRONG_ARGS_MESSAGE + argsString);
+        Shell.printError(WRONG_ARGS_MESSAGE + argsString);
         return true;
     }
 

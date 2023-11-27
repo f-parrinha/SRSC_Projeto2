@@ -45,7 +45,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.server.FServer</mainClass>
+                                    <mainClass>com.server.modules.FDispatcher</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
