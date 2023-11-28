@@ -9,7 +9,7 @@ public interface StorageService<T> {
     T createDirectory(String username, MkDirRequest mkDirRequest) throws IOException, InterruptedException;
 
     /** @TODO */
-    T getFile();
+    T getFile(String username, String path, String file) throws IOException, InterruptedException;
 
     /** @TODO */
     T createFile();

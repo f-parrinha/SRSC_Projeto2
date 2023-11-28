@@ -42,12 +42,12 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
     @PostMapping("/storage/mkdir/{username}")
     @Override
     public ResponseEntity<String> createDirectory(@PathVariable String username, @RequestBody MkDirRequest mkDirRequest) throws IOException, InterruptedException {
-        return ResponseEntity.ok("TEST");
+        return ResponseEntity.ok("MKDIR TEST");
     }
 
     @Override
-    public ResponseEntity<String> getFile() {
-        return null;
+    public ResponseEntity<String> getFile(@PathVariable String username, @PathVariable String path, @PathVariable String file) {
+        return ResponseEntity.ok("GETFILE TEST");
     }
 
     @Override

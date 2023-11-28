@@ -5,6 +5,7 @@ import com.api.requests.RestRequest;
 import com.api.services.StorageService;
 import com.client.AbstractClient;
 import io.netty.handler.ssl.SslContext;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import javax.json.JsonObject;
 import javax.net.ssl.SSLContext;
@@ -28,13 +29,15 @@ public class FStorageClient extends AbstractClient implements StorageService<Htt
     @Override
     public HttpResponse<String> createDirectory(String username, MkDirRequest mkDirRequest) throws IOException, InterruptedException {
         JsonObject mkDirJson = mkDirRequest.serialize();
-        HttpRequest request = RestRequest.getInstance(baseUri).post("/storage/mkdir/{username}", mkDirJson, username);
+        HttpRequest request = RestRequest.getInstance(baseUri, true).post("/storage/mkdir/{username}", mkDirJson, username);
         return client.send(request,  HttpResponse.BodyHandlers.ofString());
     }
 
+    @GetMapping("/storage/get/{username}/{path}/{file}")
     @Override
-    public HttpResponse<String> getFile() {
-        return null;
+    public HttpResponse<String> getFile(String username, String path, String file) throws IOException, InterruptedException {
+        HttpRequest request = RestRequest.getInstance(baseUri, true).get("/storage/{username}/{path}/{file}", username, path, file);
+        return client.send(request,  HttpResponse.BodyHandlers.ofString());
     }
 
     @Override

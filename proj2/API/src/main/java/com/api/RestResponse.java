@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Objects;
 
-public class Response {
+public class RestResponse {
 
     /** Constants */
     public static final String OK_MESSAGE = "200 -> ";
@@ -20,7 +20,7 @@ public class Response {
     /** Variables */
     private final HttpStatus status;
 
-    public Response(HttpStatus status) {
+    public RestResponse(HttpStatus status) {
         this.status = status;
     }
 

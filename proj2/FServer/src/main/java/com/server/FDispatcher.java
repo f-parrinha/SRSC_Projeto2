@@ -1,6 +1,6 @@
 package com.server;
 
-import com.api.Response;
+import com.api.RestResponse;
 import com.api.common.shell.Shell;
 import com.api.common.shell.StorePasswords;
 import com.api.common.tls.TLSClientConfig;
@@ -99,11 +99,8 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
     @Override
     public ResponseEntity<String> makeDirectory(@PathVariable String username, @RequestBody MkDirRequest mkDirRequest) throws IOException, InterruptedException {
         var storageResponse = storageClient.createDirectory(username, mkDirRequest);
-
-        // Check storage response
         HttpStatus status = HttpStatus.resolve(storageResponse.statusCode());
-        Response response = new Response(status);
-        return response.buildResponse("Storage response: " + storageResponse.body());
+        return new RestResponse(status).buildResponse(storageResponse.body());
     }
 
     @PostMapping("/put/{username}/{path}/{file}")
@@ -113,8 +110,11 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
     }
 
     @GetMapping("/get/{username}/{path}/{file}")
-    public ResponseEntity<String>  get(@PathVariable String username, @PathVariable String path, @PathVariable String file) {
-        return ResponseEntity.ok("Arquivo " + file + " baixado com sucesso para " + username + " no caminho " + path);
+    @Override
+    public ResponseEntity<String>  get(@PathVariable String username, @PathVariable String path, @PathVariable String file) throws IOException, InterruptedException {
+        var storageResponse = storageClient.getFile(username, path, file);
+        HttpStatus status = HttpStatus.resolve(storageResponse.statusCode());
+        return new RestResponse(status).buildResponse(storageResponse.body());
     }
 
     @PostMapping("/cp/{username}")
