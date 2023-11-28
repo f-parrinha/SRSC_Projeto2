@@ -1,37 +1,37 @@
 package com.server;
 
+import com.api.common.shell.Shell;
+import com.api.common.shell.StorePasswords;
 import com.api.common.tls.TLSConfigFactory;
 import com.api.common.tls.TLSServerConfig;
-import com.server.modules.FDispatcher;
-import org.springframework.boot.SpringApplication;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
+import org.springframework.context.annotation.Bean;
 
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 
 public abstract class FServer {
+    private final InputStream CONFIG_FILE = FServer.class.getClassLoader().getResourceAsStream("servertls.conf");
 
-    public static void main(String[] args) {
-        SpringApplication.run(FDispatcher.class, args);
-    }
 
-    public abstract WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> serverConfig();
-
-    protected WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> createWebServerFactory(ServerConfigs configs) {
+    protected WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> createWebServerFactory(int port, String keyStorePath, String keyAlias, String trustStorePath) {
         return factory -> {
             try {
+                StorePasswords passwords = Shell.loadTrustKeyStoresPass();
                 TLSServerConfig tls = TLSConfigFactory.getInstance().forServer()
-                        .withConfigFile(configs.configFile())
-                        .withKeyStorePath(configs.keyStorePath())
-                        .withKeyStorePass(configs.passwords().keyStorePass())
-                        .withKeyAlias(configs.keyAlias())
-                        .withKeyPass(configs.passwords().keyStorePass())
-                        .withTrustStorePath(configs.trustStorePath())
-                        .withTrustStorePass(configs.passwords().trustStorePass())
+                        .withConfigFile(CONFIG_FILE)
+                        .withKeyStorePath(keyStorePath)
+                        .withKeyStorePass(passwords.keyStorePass())
+                        .withKeyAlias(keyAlias)
+                        .withKeyPass(passwords.keyStorePass())
+                        .withTrustStorePath(trustStorePath)
+                        .withTrustStorePass(passwords.trustStorePass())
                         .build();
 
                 factory.setSsl(tls.getSslContext());
-                factory.setPort(configs.port());
+                factory.setPort(port);
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }

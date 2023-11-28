@@ -1,22 +1,16 @@
-package com.server.modules;
+package com.server;
 
-import com.api.common.shell.Shell;
-import com.api.common.shell.StorePasswords;
 import com.api.requests.CopyRequest;
 import com.api.requests.LoginRequest;
 import com.api.requests.MkDirRequest;
 import com.api.services.DispatcherService;
-import com.server.FServer;
-import com.server.ServerConfigs;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.InputStream;
 
 
 /**
@@ -27,21 +21,22 @@ import java.io.InputStream;
  */
 @SpringBootApplication
 @RestController
-@Configuration
 public class FDispatcher extends FServer implements DispatcherService<ResponseEntity<String>> {
 
     /** Constants */
     public static final int PORT = 8081;
-    public static final InputStream CONFIG_FILE = FDispatcher.class.getClassLoader().getResourceAsStream("servertls.conf");
-    public static final String KEYSTORE_PATH = "classpath:fserver-dispatcher-ks.jks";
-    public static final String KEY_ALIAS = "fserver-dispatcher";
-    public static final String TRUSTSTORE_PATH = "classpath:fserver-dispatcher-ts.jks";
+    public static final String KEYSTORE_PATH = "classpath:fdispatcher-ks.jks";
+    public static final String KEY_ALIAS = "fdispatcher";
+    public static final String TRUSTSTORE_PATH = "classpath:fdispatcher-ts.jks";
+
+    public static void main(String[] args) {
+        SpringApplication.run(FDispatcher.class, args);
+    }
 
 
     @Bean
     public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> serverConfig() {
-        StorePasswords passwords = Shell.loadTrustKeyStoresPass();
-        return createWebServerFactory(new ServerConfigs(PORT, CONFIG_FILE, KEYSTORE_PATH, KEY_ALIAS, TRUSTSTORE_PATH, passwords));
+        return createWebServerFactory(PORT, KEYSTORE_PATH, KEY_ALIAS, TRUSTSTORE_PATH);
     }
 
     @PostMapping("/login")
