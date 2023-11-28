@@ -4,24 +4,30 @@ import com.api.common.shell.Shell;
 import com.api.common.shell.StorePasswords;
 import com.api.common.tls.TLSConfigFactory;
 import com.api.common.tls.TLSServerConfig;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.ssl.PemSslBundleProperties;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
-import org.springframework.context.annotation.Bean;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.URI;
 
 public abstract class FServer {
-    private final InputStream CONFIG_FILE = FServer.class.getClassLoader().getResourceAsStream("servertls.conf");
+
+    /** Constants */
+    protected static final InputStream SERVER_CONFIG_FILE = FServer.class.getClassLoader().getResourceAsStream("servertls.conf");
+    protected static final InputStream CLIENT_CONFIG_FILE = FServer.class.getClassLoader().getResourceAsStream("clienttls.conf");
+    protected static final URI AUTH_URL = URI.create("https://localhost:8082");
+    protected static final URI ACCESS_URL = URI.create("https://localhost:8083");
+    protected static final URI STORAGE_URL = URI.create("https://localhost:8084");
 
 
-    protected WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> createWebServerFactory(int port, String keyStorePath, String keyAlias, String trustStorePath) {
+    protected WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> createWebServerFactory(
+            int port, String keyStorePath, String keyAlias, String trustStorePath, StorePasswords passwords) {
         return factory -> {
             try {
-                StorePasswords passwords = Shell.loadTrustKeyStoresPass();
                 TLSServerConfig tls = TLSConfigFactory.getInstance().forServer()
-                        .withConfigFile(CONFIG_FILE)
+                        .withConfigFile(SERVER_CONFIG_FILE)
                         .withKeyStorePath(keyStorePath)
                         .withKeyStorePass(passwords.keyStorePass())
                         .withKeyAlias(keyAlias)

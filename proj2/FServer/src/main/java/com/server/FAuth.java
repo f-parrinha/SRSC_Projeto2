@@ -1,5 +1,7 @@
 package com.server;
 
+import com.api.common.shell.Shell;
+import com.api.common.shell.StorePasswords;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
@@ -12,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class FAuth extends FServer {
 
     /** Constants */
-    public static final int PORT = 8083;
+    public static final int PORT = 8082;
     public static final String KEYSTORE_PATH = "classpath:fauth-ks.jks";
     public static final String KEY_ALIAS = "fauth";
     public static final String TRUSTSTORE_PATH = "classpath:fauth-ts.jks";
@@ -23,6 +25,7 @@ public class FAuth extends FServer {
 
     @Bean
     public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> serverConfig() {
-        return createWebServerFactory(PORT, KEYSTORE_PATH, KEY_ALIAS, TRUSTSTORE_PATH);
+        StorePasswords passwords = Shell.loadTrustKeyStoresPass();
+        return createWebServerFactory(PORT, KEYSTORE_PATH, KEY_ALIAS, TRUSTSTORE_PATH, passwords);
     }
 }

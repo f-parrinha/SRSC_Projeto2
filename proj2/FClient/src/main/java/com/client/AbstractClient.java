@@ -1,6 +1,6 @@
 package com.client;
 
-import com.client.shell.ClientShell;
+import com.api.common.shell.Shell;
 import org.springframework.http.HttpStatus;
 
 import javax.net.ssl.SSLContext;
@@ -57,17 +57,17 @@ public abstract class AbstractClient {
      */
     public void readResponse(HttpResponse<String> response) {
         if (response == null) {
-            ClientShell.printError("Response is null. Check if the request is being sent");
+            Shell.printError("Response is null. Check if the request is being sent");
             return;
         }
 
         HttpStatus status = HttpStatus.resolve(response.statusCode());
         switch (Objects.requireNonNull(status)) {
-            case OK -> ClientShell.printResult(response.body());
-            case NOT_FOUND -> ClientShell.printError("Not Found");
-            case BAD_REQUEST -> ClientShell.printError("Bad Request");
-            case FORBIDDEN -> ClientShell.printError("Forbidden");
-            default -> ClientShell.printError("Unexpected value -> " + status);
+            case OK -> Shell.printResult(response.body());
+            case NOT_FOUND -> Shell.printError("Not Found");
+            case BAD_REQUEST -> Shell.printError("Bad Request");
+            case FORBIDDEN -> Shell.printError("Forbidden");
+            default -> Shell.printError("Unexpected value -> " + status);
         }
     }
 }
