@@ -1,22 +1,34 @@
-package com.server.modules;
+package com.server;
 
+import com.api.RestResponse;
 import com.api.common.shell.Shell;
 import com.api.common.shell.StorePasswords;
+import com.api.common.tls.TLSClientConfig;
+import com.api.common.tls.TLSConfigFactory;
 import com.api.requests.CopyRequest;
 import com.api.requests.LoginRequest;
 import com.api.requests.MkDirRequest;
 import com.api.services.DispatcherService;
-import com.server.FServer;
-import com.server.ServerConfigs;
+import com.client.serviceClients.FAccessClient;
+import com.client.serviceClients.FAuthClient;
+import com.client.serviceClients.FStorageClient;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 
 
 /**
@@ -27,21 +39,42 @@ import java.io.InputStream;
  */
 @SpringBootApplication
 @RestController
-@Configuration
 public class FDispatcher extends FServer implements DispatcherService<ResponseEntity<String>> {
 
     /** Constants */
     public static final int PORT = 8081;
-    public static final InputStream CONFIG_FILE = FDispatcher.class.getClassLoader().getResourceAsStream("servertls.conf");
-    public static final String KEYSTORE_PATH = "classpath:fserver-dispatcher-ks.jks";
-    public static final String KEY_ALIAS = "fserver-dispatcher";
-    public static final String TRUSTSTORE_PATH = "classpath:fserver-dispatcher-ts.jks";
+    public static final String KEYSTORE_PATH = "classpath:fdispatcher-ks.jks";
+    public static final String KEY_ALIAS = "fdispatcher";
+    public static final String TRUSTSTORE_PATH = "classpath:fdispatcher-ts.jks";
+    public static final InputStream KEYSTORE_FILE = FDispatcher.class.getClassLoader().getResourceAsStream("fdispatcher-ks.jks");
+    public static final InputStream TRUSTSTORE_FILE = FDispatcher.class.getClassLoader().getResourceAsStream("fdispatcher-ts.jks");
+
+
+    /** Variables */
+    private FStorageClient storageClient;
+    private FAuthClient authClient;
+    private FAccessClient accessClient;
+
+    public static void main(String[] args) {
+        SpringApplication.run(FDispatcher.class, args);
+    }
 
 
     @Bean
-    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> serverConfig() {
+    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> serverConfig() throws IOException, URISyntaxException, UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         StorePasswords passwords = Shell.loadTrustKeyStoresPass();
-        return createWebServerFactory(new ServerConfigs(PORT, CONFIG_FILE, KEYSTORE_PATH, KEY_ALIAS, TRUSTSTORE_PATH, passwords));
+        TLSClientConfig tls = TLSConfigFactory.getInstance().forClient()
+                .withConfigFile(CLIENT_CONFIG_FILE)
+                .withKeyStoreFile(KEYSTORE_FILE)
+                .withKeyStorePass(passwords.keyStorePass())
+                .withTrustStoreFile(TRUSTSTORE_FILE)
+                .withTrustStorePass(passwords.trustStorePass())
+                .build();
+
+        authClient = new FAuthClient(AUTH_URL, tls.getSslContext(), tls.getSslParameters());
+        accessClient = new FAccessClient(ACCESS_URL, tls.getSslContext(), tls.getSslParameters());
+        storageClient = new FStorageClient(STORAGE_URL, tls.getSslContext(), tls.getSslParameters());
+        return createWebServerFactory(PORT, KEYSTORE_PATH, KEY_ALIAS, TRUSTSTORE_PATH, passwords);
     }
 
     @PostMapping("/login")
@@ -64,8 +97,10 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @PostMapping("/mkdir/{username}")
     @Override
-    public ResponseEntity<String> makeDirectory(@PathVariable String username, @RequestBody MkDirRequest mkDirRequest) {
-        return ResponseEntity.ok("Diretório criado com sucesso para " + username + " no caminho " + mkDirRequest.path());
+    public ResponseEntity<String> makeDirectory(@PathVariable String username, @RequestBody MkDirRequest mkDirRequest) throws IOException, InterruptedException {
+        var storageResponse = storageClient.createDirectory(username, mkDirRequest);
+        HttpStatus status = HttpStatus.resolve(storageResponse.statusCode());
+        return new RestResponse(status).buildResponse(storageResponse.body());
     }
 
     @PostMapping("/put/{username}/{path}/{file}")
@@ -75,8 +110,11 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
     }
 
     @GetMapping("/get/{username}/{path}/{file}")
-    public ResponseEntity<String>  get(@PathVariable String username, @PathVariable String path, @PathVariable String file) {
-        return ResponseEntity.ok("Arquivo " + file + " baixado com sucesso para " + username + " no caminho " + path);
+    @Override
+    public ResponseEntity<String>  get(@PathVariable String username, @PathVariable String path, @PathVariable String file) throws IOException, InterruptedException {
+        var storageResponse = storageClient.getFile(username, path, file);
+        HttpStatus status = HttpStatus.resolve(storageResponse.statusCode());
+        return new RestResponse(status).buildResponse(storageResponse.body());
     }
 
     @PostMapping("/cp/{username}")

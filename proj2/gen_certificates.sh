@@ -20,13 +20,16 @@ echo
 ################# VARIABLES ###################
 ###############################################
 
-dispatcherStoreName=fserver-dispatcher
+dispatcherStoreName=fdispatcher
+storageStoreName=fstorage
+authStoreName=fauth
+accessStoreName=faccess
 clientStoreName=client
 trustedSecret=password
 secret=password
 serverResourcesPath=FServer/src/main/resources
 clientResourcesPath=FClient/src/main/resources
-server=("$dispatcherStoreName")
+server=("$dispatcherStoreName" "$storageStoreName" "$authStoreName" "$accessStoreName")
 
 
 
@@ -136,33 +139,54 @@ PT
 yes
 EOF
 
-# Imports certificate
-echo
-echo
-echo - Importing Server Certificate into Client Truststore
-echo
-keytool -import -file "$str".crt -keystore "$clientStoreName"-ts.jks -storepass "$trustedSecret" -alias "$str" -dname CN=localhost -ext SAN=dns:localhost << EOF
-yes
+# Add Dispatcher certificate on the client's truststore
+if [ "$str" == "$dispatcherStoreName" ]; then
+  echo
+  echo
+  echo - Importing "$str" Certificate into "$clientStoreName" Truststore
+  echo
+  keytool -import -file "$str".crt -keystore "$clientStoreName"-ts.jks -storepass "$trustedSecret" -alias "$str" -dname CN=localhost -ext SAN=dns:localhost << EOF
+  yes
 EOF
-echo
-echo
-echo - Imported server certificate to client truststore
-echo
-echo - Importing Client Certificate into Server Truststore
-echo
-keytool -import -file "$clientStoreName".crt -keystore "$str"-ts.jks -storepass "$secret" -alias client-ts << EOF
-yes
+  echo
+  echo
+  echo - Imported "$str" Certificate to "$clientStoreName" TrustStore
+  echo
+  echo - Importing Client Certificate into Server TrustStore
+  echo
+  keytool -import -file "$clientStoreName".crt -keystore "$str"-ts.jks -storepass "$secret" -alias "$clientStoreName" << EOF
+  yes
 EOF
-echo
-echo
-echo - Imported client certificate to server truststore
-echo
+  echo
+  echo - Imported "$clientStoreName" Certificate to "$dispatcherStoreName" TrustStore
+  echo
+
+# Add other modules' certificate on the dispatcher's truststore
+else
+  echo
+  echo - Importing "$str" Certificate into "$dispatcherStoreName" TrustStore
+  echo
+  keytool -import -file "$str".crt -keystore "$dispatcherStoreName"-ts.jks -storepass "$trustedSecret" -alias "$str" -dname CN=localhost -ext SAN=dns:localhost << EOF
+  yes
+EOF
+  echo
+  echo - Imported "$str" Certificate to "$dispatcherStoreName" TrustStore
+  echo
+  echo - Importing "$dispatcherStoreName" Certificate into "$str" TrustStore
+  echo
+  keytool -import -file "$dispatcherStoreName".crt -keystore "$str"-ts.jks -storepass "$trustedSecret" -alias "$dispatcherStoreName" -dname CN=localhost -ext SAN=dns:localhost << EOF
+  yes
+EOF
+  echo
+  echo - Imported "$dispatcherStoreName" Certificate to "$str" TrustStore
+  echo
+fi
 done
 
 echo
 echo
-echo - Certificate, truststore and keystore generation completed.
-
+echo - Certificate, TrustStore and KeyStore generation completed.
+echo
 
 
 
@@ -179,6 +203,12 @@ cp "$clientStoreName"-ts.jks "$clientResourcesPath"
 cp "$clientStoreName"-ks.jks "$clientResourcesPath"
 cp "$dispatcherStoreName"-ts.jks "$serverResourcesPath"
 cp "$dispatcherStoreName"-ks.jks "$serverResourcesPath"
+cp "$storageStoreName"-ts.jks "$serverResourcesPath"
+cp "$storageStoreName"-ks.jks "$serverResourcesPath"
+cp "$authStoreName"-ks.jks "$serverResourcesPath"
+cp "$authStoreName"-ts.jks "$serverResourcesPath"
+cp "$accessStoreName"-ks.jks "$serverResourcesPath"
+cp "$accessStoreName"-ts.jks "$serverResourcesPath"
 echo - Done
 echo
 echo - Removing temp files...

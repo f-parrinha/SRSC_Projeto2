@@ -17,8 +17,7 @@ public interface DispatcherService<T> {
     /**
      * Requests "login" command
      *
-     * @param username username to login
-     * @param password correct password
+     * @param loginRequest the login request to be sent
      * @return Response (text)
      */
     T login(LoginRequest loginRequest) throws IOException, InterruptedException;
@@ -68,7 +67,7 @@ public interface DispatcherService<T> {
      * @param fileName the file name
      * @return Response (text)
      */
-    T get(String username, String path, String fileName);
+    T get(String username, String path, String fileName) throws IOException, InterruptedException;
 
     /**
      * Requests "cpy" command
