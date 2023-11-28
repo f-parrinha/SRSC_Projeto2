@@ -1,6 +1,7 @@
-package com.api;
+package com.api.requests;
 
 
+import com.api.common.shell.Shell;
 import org.springframework.http.HttpHeaders;
 
 import javax.json.JsonObject;
@@ -41,6 +42,20 @@ public class RestRequest<T> {
         return request;
     }
 
+    /**
+     * Sends a GET request
+     * @param uri endpoint uri
+     * @param pathArgs args to the path variables
+     * @return HttpRquest GET object
+     */
+    public HttpRequest get(String uri, String ... pathArgs) {
+        return HttpRequest.newBuilder()
+                .uri(baseUri.resolve(processPathArgs(uri, pathArgs)))
+                .header(HttpHeaders.ACCEPT, MEDIA_TYPE)
+                .header(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE)
+                .GET()
+                .build();
+    }
 
     /**
      * Sends a POST request containing a JSON object
@@ -59,17 +74,18 @@ public class RestRequest<T> {
     }
 
     /**
-     * Sends a GET request
+     * Sends a PUT request containing a JSON object
      * @param uri endpoint uri
+     * @param json json content
      * @param pathArgs args to the path variables
-     * @return HttpRquest GET object
+     * @return HttpRquest PUT object
      */
-    public HttpRequest get(String uri, String ... pathArgs) {
+    public HttpRequest put(String uri, JsonObject json, String ... pathArgs){
         return HttpRequest.newBuilder()
                 .uri(baseUri.resolve(processPathArgs(uri, pathArgs)))
                 .header(HttpHeaders.ACCEPT, MEDIA_TYPE)
                 .header(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE)
-                .GET()
+                .PUT(HttpRequest.BodyPublishers.ofString(json.toString()))
                 .build();
     }
 
@@ -96,7 +112,7 @@ public class RestRequest<T> {
 
         // Check Exception
         if (matcher.results().count()!= pathArgs.length) {
-            System.out.println(ARGS_SIZE_VARS_MISMATCH_ERROR);
+            Shell.printError(ARGS_SIZE_VARS_MISMATCH_ERROR);
             return uri;
         }
 

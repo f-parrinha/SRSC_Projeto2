@@ -40,14 +40,15 @@ public abstract class AbstractTLSConfig {
             return;
         }
 
-        // Try to read file
         try (InputStreamReader reader = new InputStreamReader(configFile)){
             BufferedReader bufferedReader = new BufferedReader(reader);
+            String[] protocolsValue = bufferedReader.readLine().split(":")[1].trim().split("\\s*,\\s*");
+            AuthType authValue = AuthType.valueOf(bufferedReader.readLine().split(":")[1].trim());
+            String[] ciphersValue = bufferedReader.readLine().split(":");
 
-            // Assign read values
-            this.protocols = bufferedReader.readLine().split(":")[1].trim().split("\\s*,\\s*");
-            this.auth = AuthType.valueOf(bufferedReader.readLine().split(":")[1].trim());
-            this.ciphers = bufferedReader.readLine().split(":")[1].trim().split("\\s*,\\s*");
+            this.protocols = protocolsValue;
+            this.auth = authValue;
+            this.ciphers = ciphersValue.length < 2 ? new String[] {} : ciphersValue[1].trim().split("\\s*,\\s*");
         } catch (IOException e) {
             Shell.printError(Arrays.toString(e.getStackTrace()));
             throw new RuntimeException(e);
@@ -68,16 +69,5 @@ public abstract class AbstractTLSConfig {
     }
     public void setTrustStorePass(String pass) {
         trustStorePass = pass;
-    }
-
-    private String[] listToArray(List<String> list) {
-        String[] result = new String[list.size()];
-        int idx = 0;
-
-        for(String el : list) {
-            result[idx++] = el;
-        }
-
-        return result;
     }
 }

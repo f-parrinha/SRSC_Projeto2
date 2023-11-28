@@ -16,7 +16,7 @@ public class ShellPreconditions {
     public static final String GET_ARGS = "'get username path/file'";
     public static final String CP_ARGS = "'cp username path1/file1 path2/file2'";
     public static final String RM_ARGS = "'rm username path/file'";
-    public static final String FILE_ARGS = "'file username'";
+    public static final String FILE_ARGS = "'file username path'";
 
     /**
      * Checks if the given argument list size is wrong or not, considering a given desired size

@@ -1,6 +1,6 @@
 package com.client.serviceClients;
 
-import com.api.RestRequest;
+import com.api.requests.RestRequest;
 import com.api.requests.CopyRequest;
 import com.api.requests.MkDirRequest;
 import com.client.AbstractClient;

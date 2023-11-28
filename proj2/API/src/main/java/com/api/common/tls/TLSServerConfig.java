@@ -36,9 +36,7 @@ public class TLSServerConfig extends AbstractTLSConfig implements TLSConfig<Ssl>
     @Override
     public Ssl buildSslContext() {
         Ssl ssl = new Ssl();
-        ssl.setProtocol(TLS_PROTOCOL);
-        ssl.setCiphers(ciphers);
-        ssl.setEnabledProtocols(protocols);
+        ssl.setEnabled(true);
         ssl.setKeyStoreType(STORE_TYPE);
         ssl.setKeyStore(keyStorePath);
         ssl.setKeyStorePassword(keyStorePass);
@@ -48,7 +46,9 @@ public class TLSServerConfig extends AbstractTLSConfig implements TLSConfig<Ssl>
         ssl.setTrustStore(trustStorePath);
         ssl.setTrustStorePassword(trustStorePass);
         ssl.setClientAuth(auth == AuthType.SERV ? Ssl.ClientAuth.NONE : Ssl.ClientAuth.WANT);
-        ssl.setEnabled(true);
+        ssl.setProtocol(TLS_PROTOCOL);
+        ssl.setEnabledProtocols(protocols);
+        if (ciphers.length != 0 ) ssl.setCiphers(ciphers);
 
         return ssl;
     }

@@ -4,7 +4,7 @@ import com.api.common.shell.Shell;
 import com.api.common.shell.ShellPreconditions;
 import com.api.common.shell.StorePasswords;
 import com.api.common.tls.TLSClientConfig;
-import com.api.common.tls.TLSClientConfigBuilder;
+import com.api.common.tls.TLSConfigFactory;
 import com.client.serviceClients.FDispatcherClient;
 import com.client.shell.commands.*;
 
@@ -39,7 +39,7 @@ public class ClientShell extends Shell {
     public static void main(String[] args) throws IOException, UnrecoverableKeyException, CertificateException,
             NoSuchAlgorithmException, KeyStoreException, URISyntaxException, KeyManagementException, InterruptedException {
         StorePasswords passwords = Shell.loadTrustKeyStoresPass();
-        TLSClientConfig tls = new TLSClientConfigBuilder()
+        TLSClientConfig tls = TLSConfigFactory.getInstance().forClient()
                 .withConfigFile(CONFIG_PATH)
                 .withKeyStoreFile(KEYSTORE_FILE)
                 .withKeyStorePass(passwords.keyStorePass())

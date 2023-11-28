@@ -73,8 +73,9 @@ public class TLSClientConfig extends AbstractTLSConfig implements TLSConfig<SSLC
 
     public SSLParameters buildSslParameters() {
         SSLParameters params = new SSLParameters();
-        params.setCipherSuites(ciphers);
+
         params.setProtocols(protocols);
+        if (ciphers.length != 0 ) params.setCipherSuites(ciphers);
         return params;
     }
 }
