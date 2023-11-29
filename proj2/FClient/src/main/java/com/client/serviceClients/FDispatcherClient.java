@@ -66,9 +66,9 @@ public class FDispatcherClient extends AbstractClient implements DispatcherServi
     }
 
     @Override
-    public HttpResponse<String> get(String username, String path, String fileName) {
-        /*@TODO*/
-        return null;
+    public HttpResponse<String> get(String username, String path, String fileName) throws IOException, InterruptedException {
+        HttpRequest request = RestRequest.getInstance(baseUri).get("/get/{username}/{path}/{fileName}", username, path, fileName);
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     @Override

@@ -10,10 +10,7 @@ import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 
@@ -45,6 +42,7 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
         return ResponseEntity.ok("MKDIR TEST");
     }
 
+    @GetMapping("/storage/get/{username}/{path}/{file}")
     @Override
     public ResponseEntity<String> getFile(@PathVariable String username, @PathVariable String path, @PathVariable String file) {
         return ResponseEntity.ok("GETFILE TEST");
