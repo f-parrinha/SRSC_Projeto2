@@ -1,13 +1,13 @@
 package com.client.shell.commands;
 
-import com.client.serviceClients.FClient;
-import com.client.shell.ShellPreconditions;
+import com.client.serviceClients.FDispatcherClient;
+import com.api.common.shell.ShellPreconditions;
 
 public class GetCommand extends ShellCommand implements Command {
     public static int ARG_SIZE = 2;
 
 
-    public GetCommand(FClient client) {
+    public GetCommand(FDispatcherClient client) {
         super(client);
     }
 

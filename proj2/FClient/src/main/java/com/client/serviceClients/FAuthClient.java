@@ -1,22 +1,21 @@
 package com.client.serviceClients;
 
-import com.api.LoginRequest;
-import com.api.services.FServerAuthService;
 import com.client.AbstractClient;
-import org.springframework.http.ResponseEntity;
-import reactor.core.publisher.Mono;
+import io.netty.handler.ssl.SslContext;
 
-public class FAuthClient extends AbstractClient implements FServerAuthService {
-    public FAuthClient(String URL) {
-        super(URL);
-    }
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSocketFactory;
+import java.io.IOException;
+import java.net.URI;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 
-    @Override
-    public Mono<ResponseEntity<Boolean>> authenticateUser(String username, String password) {
-        return webClient.post()
-                .uri("/authenticate")
-                .body(Mono.just(new LoginRequest(username, password)), LoginRequest.class)
-                .retrieve()
-                .toEntity(Boolean.class);
+public class FAuthClient extends AbstractClient {
+    public FAuthClient(URI uri, SSLContext sslContext, SSLParameters sslParameters) throws NoSuchAlgorithmException, KeyManagementException {
+        super(uri, sslContext, sslParameters);
     }
 }
