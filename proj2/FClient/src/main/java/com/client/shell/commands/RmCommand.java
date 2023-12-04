@@ -1,19 +1,28 @@
 package com.client.shell.commands;
 
-import com.client.serviceClients.FClient;
-import com.client.shell.ShellPreconditions;
+import com.client.serviceClients.FDispatcherClient;
+import com.api.common.shell.ShellPreconditions;
 
+import java.io.IOException;
+
+/**
+ * Class  RmCommand  defines the "rm" command ran by the shell.
+ * It follows the "Command Pattern" design pattern
+ *
+ * @author Martin Magdalinchev  58172
+ * @author Francisco Parrinha   58360
+ */
 public class RmCommand extends ShellCommand implements Command {
     public static int ARG_SIZE = 2;
 
 
-    public RmCommand(FClient client) {
+    public RmCommand(FDispatcherClient client) {
         super(client);
     }
 
 
     @Override
-    public void execute(String[] input) {
+    public void execute(String[] input) throws IOException, InterruptedException {
         if (ShellPreconditions.wrongArgSize(input, ShellPreconditions.RM_ARGS, ARG_SIZE)) return;
 
         // Get input

@@ -6,14 +6,22 @@ import com.api.AuthenticateUsernameResponse;
 import com.api.LoginRequest;
 import com.api.services.FServerAuthService;
 import com.client.AbstractClient;
-import org.springframework.http.ResponseEntity;
-import reactor.core.publisher.Mono;
+import io.netty.handler.ssl.SslContext;
 
-public class FAuthClient extends AbstractClient implements FServerAuthService {
-    public FAuthClient(String URL) {
-        super(URL);
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSocketFactory;
+import java.io.IOException;
+import java.net.URI;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+public class FAuthClient extends AbstractClient {
+    public FAuthClient(URI uri, SSLContext sslContext, SSLParameters sslParameters) throws NoSuchAlgorithmException, KeyManagementException {
+        super(uri, sslContext, sslParameters);
     }
-
     @Override
     public Mono<ResponseEntity<byte[]>> authenticateUser(AuthenticatePasswordRequest loginRequest) {
         return webClient.post()
@@ -28,6 +36,6 @@ public class FAuthClient extends AbstractClient implements FServerAuthService {
                 .body(Mono.just(request), AuthenticateUsernameRequest.class)
                 .retrieve()
                 .toEntity(AuthenticateUsernameResponse.class);
-    }
+
 
 }

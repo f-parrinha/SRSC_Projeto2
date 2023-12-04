@@ -1,13 +1,20 @@
 package com.client.shell.commands;
 
-import com.client.serviceClients.FClient;
-import com.client.shell.ShellPreconditions;
+import com.client.serviceClients.FDispatcherClient;
+import com.api.common.shell.ShellPreconditions;
 
+/**
+ * Class  RmCommand  defines the "put" command ran by the shell.
+ * It follows the "Command Pattern" design pattern
+ *
+ * @author Martin Magdalinchev  58172
+ * @author Francisco Parrinha   58360
+ */
 public class PutCommand extends ShellCommand implements Command {
     public static int ARG_SIZE = 2;
 
 
-    public PutCommand(FClient client) {
+    public PutCommand(FDispatcherClient client) {
         super(client);
     }
 

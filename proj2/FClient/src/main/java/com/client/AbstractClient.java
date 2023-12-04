@@ -1,16 +1,15 @@
 package com.client;
 
-import com.api.DHKeyExchangeRequest;
-import com.api.LoginRequest;
-import com.api.common.UtilsDH;
-import com.client.shell.FClientShell;
-import io.netty.channel.ChannelOption;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
-import reactor.netty.http.client.HttpClient;
+import com.api.common.shell.Shell;
+import org.springframework.http.HttpStatus;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.Objects;
 
 import javax.crypto.KeyAgreement;
 import java.security.*;
@@ -28,50 +27,55 @@ import java.util.Base64;
  */
 public abstract class AbstractClient {
 
-    /**
-     * Variables
-     */
-    protected final WebClient webClient;
-
+    /** Constants */
+    public static final Duration TIMEOUT = Duration.ofSeconds(10);
+    protected final HttpClient client;
+    protected final URI baseUri;
 
     /**
      * Constructor
-     *
-     * @param URL FServer URL
+     * @param uri FServer URI
+     * @param sslContext custom SSLContext object to configure TLS communication
+     * @param sslParameters custom SSLParameters object to configure TLS communication
      */
-    public AbstractClient(String URL) {
-        HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000);
-        webClient = WebClient.builder()
-                .clientConnector(new ReactorClientHttpConnector(httpClient))
-                .baseUrl(URL)
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .defaultHeader(HttpHeaders.ACCEPT, "application/json")
+    public AbstractClient(URI uri, SSLContext sslContext, SSLParameters sslParameters) {
+        this.client = createHttpsClient(sslContext, sslParameters);
+        this.baseUri = uri;
+    }
+
+    /**
+     * Creates a HTTPS client (TLS protocol) with custom SSL configurations
+     * @param sslContext custom SSLContext object to configure TLS communication
+     * @param sslParameters custom SSLParameters object to configure TLS communication
+     * @return HTTPS client with custom SSL configs
+     */
+    public HttpClient createHttpsClient(SSLContext sslContext, SSLParameters sslParameters) {
+        return HttpClient.newBuilder()
+                .connectTimeout(TIMEOUT)
+                .sslParameters(sslParameters)
+                .sslContext(sslContext)
                 .build();
     }
 
     /**
      * Reads a response from the server and prints the correct results (errors and content)
      * Follows a subscriber/publisher pattern
-     *
-     * @param response reponse from the server
+     * @param response response from the server
      */
-    public void readResponse(Mono<ResponseEntity<String>> response) {
+    public void readResponse(HttpResponse<String> response) {
         if (response == null) {
-            FClientShell.printError("Response is null. Check if the request is being sent");
+            Shell.printError("Response is null. Check if the request is being sent");
             return;
         }
 
-        // Subscribe to check response status (subscriber/publisher pattern...)
-        response.subscribe(
-                result -> {
-                    FClientShell.printResult(result.getBody());
-                },
-                error -> {
-                    FClientShell.printResult(error.getMessage());
-                },
-                () -> { /* Leaving empty... */ }
-        );
+        HttpStatus status = HttpStatus.resolve(response.statusCode());
+        switch (Objects.requireNonNull(status)) {
+            case OK -> Shell.printResult(response.body());
+            case NOT_FOUND -> Shell.printError("Not Found");
+            case BAD_REQUEST -> Shell.printError("Bad Request");
+            case FORBIDDEN -> Shell.printError("Forbidden");
+            default -> Shell.printError("Unexpected value -> " + status);
+        }
     }
 
 }

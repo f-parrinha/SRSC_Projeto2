@@ -1,4 +1,4 @@
-package com.client.shell;
+package com.api.common.shell;
 
 /**
  * Class  ShellPreconditions  offers precondition tools for the client shell
@@ -16,7 +16,7 @@ public class ShellPreconditions {
     public static final String GET_ARGS = "'get username path/file'";
     public static final String CP_ARGS = "'cp username path1/file1 path2/file2'";
     public static final String RM_ARGS = "'rm username path/file'";
-    public static final String FILE_ARGS = "'file username'";
+    public static final String FILE_ARGS = "'file username path'";
 
     /**
      * Checks if the given argument list size is wrong or not, considering a given desired size
@@ -26,7 +26,7 @@ public class ShellPreconditions {
      * @return true if wrong, false if correct
      */
     public static boolean wrongArgSize(String[] args, String argsString, int ... argSizes) {
-        if (argSizes.length == 0) { FClientShell.printError(DEFAULT_WRONG_ARG_SIZES_ERROR); return true; }
+        if (argSizes.length == 0) { Shell.printError(DEFAULT_WRONG_ARG_SIZES_ERROR); return true; }
 
         for (int n : argSizes) {
             if (n == (args.length - 1)) {
@@ -34,7 +34,7 @@ public class ShellPreconditions {
             }
         }
 
-        FClientShell.printError(WRONG_ARGS_MESSAGE + argsString);
+        Shell.printError(WRONG_ARGS_MESSAGE + argsString);
         return true;
     }
 

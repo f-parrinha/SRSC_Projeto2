@@ -115,40 +115,45 @@ public class FServer {
     public Mono<ResponseEntity<String>> listFiles(@PathVariable String username, @PathVariable String path) {
         return Mono.just(ResponseEntity.ok("Lista de arquivos/diretórios para " + username + " no caminho " + path));
     }
+import com.api.common.shell.StorePasswords;
+import com.api.common.tls.TLSConfigFactory;
+import com.api.common.tls.TLSServerConfig;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
+import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 
-    @PostMapping("/mkdir/{username}/{path}")
-    public Mono<ResponseEntity<String>> createDirectory(@PathVariable String username, @PathVariable String path) {
-        return Mono.just(ResponseEntity.ok("Diretório criado com sucesso para " + username + " no caminho " + path));
-    }
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.net.URI;
 
-    @PostMapping("/put/{username}/{path}/{file}")
-    public Mono<ResponseEntity<String>> uploadFile(@PathVariable String username, @PathVariable String path, @PathVariable String file) {
-        return Mono.just(ResponseEntity.ok("Arquivo " + file + " enviado com sucesso para " + username + " no caminho " + path));
-    }
+public abstract class FServer {
 
-    @GetMapping("/get/{username}/{path}/{file}")
-    public Mono<ResponseEntity<String>> downloadFile(@PathVariable String username, @PathVariable String path, @PathVariable String file) {
-        return Mono.just(ResponseEntity.ok("Arquivo " + file + " baixado com sucesso para " + username + " no caminho " + path));
-    }
+    /** Constants */
+    protected static final InputStream SERVER_CONFIG_FILE = FServer.class.getClassLoader().getResourceAsStream("servertls.conf");
+    protected static final InputStream CLIENT_CONFIG_FILE = FServer.class.getClassLoader().getResourceAsStream("clienttls.conf");
+    protected static final URI AUTH_URL = URI.create("https://localhost:8082");
+    protected static final URI ACCESS_URL = URI.create("https://localhost:8083");
+    protected static final URI STORAGE_URL = URI.create("https://localhost:8084");
 
-    @PostMapping("/cp/{username}/{sourcePath}/{sourceFile}/{destPath}/{destFile}")
-    public Mono<ResponseEntity<String>> copyFile(
-            @PathVariable String username,
-            @PathVariable String sourcePath,
-            @PathVariable String sourceFile,
-            @PathVariable String destPath,
-            @PathVariable String destFile) {
-        return Mono.just(ResponseEntity.ok("Arquivo " + sourceFile + " copiado de " + sourcePath + " para " + destPath + " com o nome " + destFile));
-    }
+    protected WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> createWebServerFactory(
+            int port, String keyStorePath, String keyAlias, String trustStorePath, StorePasswords passwords) {
+        return factory -> {
+            try {
+                TLSServerConfig tls = TLSConfigFactory.getInstance().forServer()
+                        .withConfigFile(SERVER_CONFIG_FILE)
+                        .withKeyStorePath(keyStorePath)
+                        .withKeyStorePass(passwords.keyStorePass())
+                        .withKeyAlias(keyAlias)
+                        .withKeyPass(passwords.keyStorePass())
+                        .withTrustStorePath(trustStorePath)
+                        .withTrustStorePass(passwords.trustStorePass())
+                        .build();
 
-    @DeleteMapping("/rm/{username}/{path}/{file}")
-    public Mono<ResponseEntity<String>> removeFile(@PathVariable String username, @PathVariable String path, @PathVariable String file) {
-        return Mono.just(ResponseEntity.ok("Arquivo " + file + " removido com sucesso de " + username + " no caminho " + path));
-    }
-
-    @GetMapping("/file/{username}/{path}/{file}")
-    public Mono<ResponseEntity<String>> fileInfo(@PathVariable String username, @PathVariable String path, @PathVariable String file) {
-        return Mono.just(ResponseEntity.ok("Informações sobre o arquivo " + file + " para " + username + " no caminho " + path));
+                factory.setSsl(tls.getSslContext());
+                factory.setPort(port);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 
     private void storeToken(byte[] message) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, InvalidKeySpecException {
