@@ -1,7 +1,12 @@
 package com.api.services;
 
+import com.api.AuthenticateUsernameResponse;
 import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
+
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 
 /**
  * Interface  FServerService  describes the API for the FServer usage
@@ -17,7 +22,13 @@ public interface FServerService {
      * @param password correct password
      * @return Response (text)
      */
-    Mono<ResponseEntity<String>> login(String username, String password);
+    Mono<ResponseEntity<String>> login(String username, String password) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException;
+
+    /**
+     * @param username
+     * @return
+     */
+    Mono<ResponseEntity<AuthenticateUsernameResponse>> requestDHPublicKey(String username);
 
     /**
      * Requests "ls" command

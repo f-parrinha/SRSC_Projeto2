@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="FClient" />
+        <module name="API" />
+        <module name="FServer" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="SRSC_Projeto2" target="17" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="API" options="-parameters" />
+      <module name="FClient" options="-parameters" />
+      <module name="FServer" options="-parameters" />
+      <module name="SRSC_Projeto2" options="-parameters" />
+      <module name="proj2" options="-parameters" />
+    </option>
+  </component>
+</project>

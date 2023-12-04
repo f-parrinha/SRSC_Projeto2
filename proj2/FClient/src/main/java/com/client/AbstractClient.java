@@ -1,5 +1,8 @@
 package com.client;
 
+import com.api.DHKeyExchangeRequest;
+import com.api.LoginRequest;
+import com.api.common.UtilsDH;
 import com.client.shell.FClientShell;
 import io.netty.channel.ChannelOption;
 import org.springframework.http.HttpHeaders;
@@ -8,6 +11,13 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
+
+import javax.crypto.KeyAgreement;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.InvalidParameterSpecException;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 
 /**
@@ -18,12 +28,15 @@ import reactor.netty.http.client.HttpClient;
  */
 public abstract class AbstractClient {
 
-    /** Variables */
+    /**
+     * Variables
+     */
     protected final WebClient webClient;
 
 
     /**
      * Constructor
+     *
      * @param URL FServer URL
      */
     public AbstractClient(String URL) {
@@ -35,12 +48,12 @@ public abstract class AbstractClient {
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .defaultHeader(HttpHeaders.ACCEPT, "application/json")
                 .build();
-
     }
 
     /**
      * Reads a response from the server and prints the correct results (errors and content)
      * Follows a subscriber/publisher pattern
+     *
      * @param response reponse from the server
      */
     public void readResponse(Mono<ResponseEntity<String>> response) {
@@ -60,4 +73,5 @@ public abstract class AbstractClient {
                 () -> { /* Leaving empty... */ }
         );
     }
+
 }

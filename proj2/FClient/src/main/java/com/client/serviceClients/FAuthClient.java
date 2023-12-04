@@ -1,5 +1,8 @@
 package com.client.serviceClients;
 
+import com.api.AuthenticatePasswordRequest;
+import com.api.AuthenticateUsernameRequest;
+import com.api.AuthenticateUsernameResponse;
 import com.api.LoginRequest;
 import com.api.services.FServerAuthService;
 import com.client.AbstractClient;
@@ -12,11 +15,19 @@ public class FAuthClient extends AbstractClient implements FServerAuthService {
     }
 
     @Override
-    public Mono<ResponseEntity<Boolean>> authenticateUser(String username, String password) {
+    public Mono<ResponseEntity<byte[]>> authenticateUser(AuthenticatePasswordRequest loginRequest) {
         return webClient.post()
                 .uri("/authenticate")
-                .body(Mono.just(new LoginRequest(username, password)), LoginRequest.class)
+                .body(Mono.just(loginRequest), AuthenticatePasswordRequest.class)
                 .retrieve()
-                .toEntity(Boolean.class);
+                .toEntity(byte[].class);
     }
+    public Mono<ResponseEntity<AuthenticateUsernameResponse>> requestDHPublicKey(AuthenticateUsernameRequest request) {
+        return webClient.post()
+                .uri("/init-connection-auth")
+                .body(Mono.just(request), AuthenticateUsernameRequest.class)
+                .retrieve()
+                .toEntity(AuthenticateUsernameResponse.class);
+    }
+
 }

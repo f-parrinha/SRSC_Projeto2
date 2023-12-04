@@ -6,8 +6,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import javax.crypto.NoSuchPaddingException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Class  FClientShell  creates an interactive shell to communicate with the FServer
@@ -16,9 +19,11 @@ import java.io.InputStreamReader;
  * @author Francisco Parrinha   58360
  */
 @SpringBootApplication
-public class FClientShell implements CommandLineRunner{
+public class FClientShell implements CommandLineRunner {
 
-    /** Constants */
+    /**
+     * Constants
+     */
     private static final String SERVER_URL = "http://localhost:8081";
     private static final String DASH = "> ";
     private static final String EMPTY = " ";
@@ -29,12 +34,13 @@ public class FClientShell implements CommandLineRunner{
     private static final String DEFAULT_EXIT_MESSAGE = "Closing client.. See you next time! :)";
     private static final String DEFAULT_WELCOME_MESSAGE = "Welcome to the FServer platform!";
 
-    /** Variables */
+    /**
+     * Variables
+     */
     private final BufferedReader reader;
     private final FClient client;
 
-
-    public FClientShell() {
+    public FClientShell() throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException {
         client = new FClient(SERVER_URL);
         reader = new BufferedReader(new InputStreamReader(System.in));
     }
@@ -54,12 +60,17 @@ public class FClientShell implements CommandLineRunner{
         }
     }
 
+
     /**
      * Prints a new custom line starting with a "> " on the shell interface
+     *
      * @param text the output text
      */
-    public static void printLine(String text){
-        if(text.isEmpty()) { System.out.print(DASH); return;}
+    public static void printLine(String text) {
+        if (text.isEmpty()) {
+            System.out.print(DASH);
+            return;
+        }
 
         System.out.println(DASH + text);
         System.out.print(DASH);
@@ -67,6 +78,7 @@ public class FClientShell implements CommandLineRunner{
 
     /**
      * Prints text with a 'result' label
+     *
      * @param text result to print
      */
     public static void printResult(String text) {
@@ -75,6 +87,7 @@ public class FClientShell implements CommandLineRunner{
 
     /**
      * Prints text with a 'fine' label
+     *
      * @param text text to print
      */
     public static void printFine(String text) {
@@ -83,6 +96,7 @@ public class FClientShell implements CommandLineRunner{
 
     /**
      * Prints text with a 'error' label
+     *
      * @param text error to print
      */
     public static void printError(String text) {
@@ -91,10 +105,14 @@ public class FClientShell implements CommandLineRunner{
 
     /**
      * Responsible for dispatching the execution of the different commands based on user input
+     *
      * @param input input command
      */
     private void executeCommand(String[] input) {
-        if(ShellPreconditions.noCommandGiven(input)) { printLine(""); return; }    // Check empty input
+        if (ShellPreconditions.noCommandGiven(input)) {
+            printLine("");
+            return;
+        }    // Check empty input
 
         // Read command
         String commandInput = input[0];
@@ -103,7 +121,7 @@ public class FClientShell implements CommandLineRunner{
             new LoginCommand(client).execute(input);
         } else if (commandInput.equalsIgnoreCase(Command.Type.ls.toString())) {
             new LsCommand(client).execute(input);
-        } else if(commandInput.equalsIgnoreCase(Command.Type.mkdir.toString())) {
+        } else if (commandInput.equalsIgnoreCase(Command.Type.mkdir.toString())) {
             new MkDirCommand(client).execute(input);
         } else if (commandInput.equalsIgnoreCase(Command.Type.put.toString())) {
             new PutCommand(client).execute(input);
