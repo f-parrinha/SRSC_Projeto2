@@ -1,5 +1,7 @@
 package com.api.common.tls;
 
+import com.api.common.shell.Shell;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,16 +37,35 @@ public class TLSConfigFactory {
             tls = new TLSClientConfig();
         }
     
-        public TLSClientConfig build() throws IOException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, KeyManagementException {
-            tls.readConfigFile();
-            tls.setSslContext(tls.buildSslContext());
-            tls.setSslParameters(tls.buildSslParameters());
-            tls.printSSLConfigs();
+        public TLSClientConfig build() {
+            try {
+                tls.readConfigFile();
+                tls.setSslContext(tls.buildSslContext());
+                tls.setSslParameters(tls.buildSslParameters());
+                tls.printSSLConfigs();
+            } catch (IOException e) {
+                Shell.printError("Error while reading configuration file.");
+            } catch (KeyStoreException e) {
+                Shell.printError("There was a problem while initializing the keystore.");
+            } catch (NoSuchAlgorithmException e) {
+                Shell.printError("There is no such algorithm for TLS support.");
+            } catch (UnrecoverableKeyException e) {
+                Shell.printError("Unrecoverable key.");
+            } catch (CertificateException e) {
+                Shell.printError("No certificate found.");
+            } catch (KeyManagementException e) {
+                Shell.printError("There was a problem related to the key management system.");
+            }
+
             return tls;
         }
     
-        public ClientBuilder withConfigFile(InputStream configFile) throws FileNotFoundException {
-            tls.setConfigFile(configFile);
+        public ClientBuilder withConfigFile(InputStream configFile) {
+            try {
+                tls.setConfigFile(configFile);
+            } catch (Exception e) {
+                Shell.printError("Config file not found");
+            }
             return this;
         }
     

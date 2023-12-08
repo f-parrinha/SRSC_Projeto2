@@ -3,7 +3,7 @@ package com.api.auth;
 import com.api.utils.UtilsBase;
 import com.api.requests.authenticate.AuthenticatePasswordRequest;
 import com.api.requests.authenticate.AuthenticatePasswordResponse;
-import com.api.requests.SingleDataRequest;
+import com.api.rest.SingleDataRequest;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;

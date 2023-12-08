@@ -11,8 +11,9 @@ public class Shell {
     public static final String DEBUG_ENTRY = "DEBUG: ";
     public static final String FINE_ENTRY = "FINE: ";
     public static final String ERROR_ENTRY = "ERROR: ";
-   public static final Console CONSOLE = System.console();
+    public static final Console CONSOLE = System.console();
 
+    private static boolean debugOn;
 
     /**
      * Prints a new custom line starting with a "> " on the shell interface
@@ -43,7 +44,7 @@ public class Shell {
      * @param text debug to print
      */
     public static void printDebug(String text) {
-        printLine(DEBUG_ENTRY + text);
+        if (debugOn) printLine(DEBUG_ENTRY + text);
     }
 
     /**
@@ -70,7 +71,15 @@ public class Shell {
         printLine(ERROR_ENTRY + text);
     }
 
-    public static StorePasswords loadTrustKeyStoresPass() {
+    public static StorePasswords loadTrustKeyStoresPass(String[] args) {
+        if(args.length == 2) {
+            return new StorePasswords(args[0], args[1]);
+        } else if (args.length == 3) {
+            debugOn = args[2].equalsIgnoreCase("true");
+            return new StorePasswords(args[0], args[1]);
+        }
+
+        // No passwords were given as input...
         printLineInput("Enter KeyStore password:");
         String keyStorePass = String.copyValueOf(CONSOLE.readPassword());
         printLineInput("Enter TrustStore password:");

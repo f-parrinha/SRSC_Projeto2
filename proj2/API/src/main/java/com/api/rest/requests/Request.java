@@ -1,6 +1,7 @@
-package com.api.requests;
+package com.api.rest.requests;
 
 import javax.json.JsonObject;
+import java.io.IOException;
 
 public interface Request<T> {
 
@@ -16,10 +17,7 @@ public interface Request<T> {
 
     /**
      * Serializes the request itself into a JSON object
-     *
      * @return Json object
      */
     JsonObject serialize();
-
-
 }

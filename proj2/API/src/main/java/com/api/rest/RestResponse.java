@@ -1,18 +1,22 @@
-package com.api;
+package com.api.rest;
 
+import com.api.common.shell.Shell;
+import com.api.rest.requests.Request;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.net.URI;
 import java.util.Objects;
 
 public class RestResponse {
 
     /** Constants */
     public static final String OK_MESSAGE = "200 -> ";
-    public static final String NOT_FOUND_MESSAGE = "404 -> The URL given is forbidden. ";
-    public static final String FORBIDDEN_MESSAGE = "403 -> The URL given is forbidden. ";
-    public static final String BAD_REQUEST_MESSAGE = "400 -> Bad request. ";
-    public static final String INTERNAL_ERROR_MESSAGE = "500 -> Internal server error. ";
+    public static final String NOT_FOUND_MESSAGE = "404 -> ";
+    public static final String FORBIDDEN_MESSAGE = "403 -> ";
+    public static final String BAD_REQUEST_MESSAGE = "400 -> ";
+    public static final String INTERNAL_ERROR_MESSAGE = "500 -> ";
+    private static final String CONFLICT_MESSAGE = "409 -> ";
     public static final String WRONG_STATUS = "Unexpected HTTP status value. ";
     public static final String NO_STATUS_GIVEN = "No HTTP status was given.";
 
@@ -23,6 +27,7 @@ public class RestResponse {
     public RestResponse(HttpStatus status) {
         this.status = status;
     }
+
 
     /**
      * Checks if there is a HttpStatus object
@@ -42,6 +47,7 @@ public class RestResponse {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(INTERNAL_ERROR_MESSAGE + NO_STATUS_GIVEN);
         }
 
+        Shell.printDebug("Creating REST response '" + content + "'");
         String body = statusToString(status, content);
         return ResponseEntity.status(status).body(body);
     }
@@ -55,22 +61,25 @@ public class RestResponse {
     public String statusToString(HttpStatus status, String content) {
         switch (Objects.requireNonNull(status)) {
             case OK -> {
-                return /*OK_MESSAGE + */content;
+                return (content.contains(OK_MESSAGE) ? "" : OK_MESSAGE) + content;
             }
             case NOT_FOUND -> {
-                return NOT_FOUND_MESSAGE;
+                return (content.contains(NOT_FOUND_MESSAGE) ? "" : NOT_FOUND_MESSAGE) + content;
             }
             case BAD_REQUEST -> {
-                return BAD_REQUEST_MESSAGE ;
+                return (content.contains(BAD_REQUEST_MESSAGE) ? "" : BAD_REQUEST_MESSAGE) + content;
             }
             case FORBIDDEN -> {
-                return FORBIDDEN_MESSAGE;
+                return (content.contains(FORBIDDEN_MESSAGE) ? "" : FORBIDDEN_MESSAGE) + content;
             }
             case INTERNAL_SERVER_ERROR -> {
-                return INTERNAL_ERROR_MESSAGE;
+                return (content.contains(INTERNAL_ERROR_MESSAGE) ? "" : INTERNAL_ERROR_MESSAGE) + content;
+            }
+            case CONFLICT -> {
+                return (content.contains(CONFLICT_MESSAGE) ? "" : CONFLICT_MESSAGE) + content;
             }
             default -> {
-                return WRONG_STATUS + content;
+                return (content.contains(WRONG_STATUS) ? "" : WRONG_STATUS) + content;
             }
         }
     }

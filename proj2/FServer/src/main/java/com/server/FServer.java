@@ -10,6 +10,11 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URI;
 
+/**
+ * Abstract Class  FServer  describes the general functionalities of a server in the FServer platform.
+ * @author Martin Magdalinchev  58172
+ * @author Francisco Parrinha   58360
+ */
 public abstract class FServer {
 
     /** Constants */
@@ -18,6 +23,7 @@ public abstract class FServer {
     protected static final URI AUTH_URL = URI.create("https://localhost:8082");
     protected static final URI ACCESS_URL = URI.create("https://localhost:8083");
     protected static final URI STORAGE_URL = URI.create("https://localhost:8084");
+
 
     protected WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> createWebServerFactory(
             int port, String keyStorePath, String keyAlias, String trustStorePath, StorePasswords passwords) {

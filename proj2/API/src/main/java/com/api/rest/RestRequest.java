@@ -1,7 +1,8 @@
-package com.api.requests;
+package com.api.rest;
 
 
 import com.api.common.shell.Shell;
+import com.api.rest.requests.Request;
 import org.springframework.http.HttpHeaders;
 
 import javax.json.JsonObject;
@@ -103,7 +104,7 @@ public class RestRequest<T> {
      */
     public HttpRequest get(String url, String token, String ... pathArgs) {
         URI uri = baseUri.resolve(processPathArgs(url, pathArgs));
-        printDebugMessage(uri, Request.Type.GET);
+        Shell.printDebug("Send REST request to '" + uri + "' with request type as '" + Request.Type.GET + "'");
         return HttpRequest.newBuilder()
                 .uri(uri)
                 .header(HttpHeaders.ACCEPT, MEDIA_TYPE)
@@ -122,7 +123,7 @@ public class RestRequest<T> {
      */
     public HttpRequest post(String url, JsonObject json, String ... pathArgs){
         URI uri = baseUri.resolve(processPathArgs(url, pathArgs));
-        printDebugMessage(uri, Request.Type.POST);
+        Shell.printDebug("Send REST request to '" + uri + "' with request type as '" + Request.Type.POST + "'");
         return HttpRequest.newBuilder()
                 .uri(uri)
                 .header(HttpHeaders.ACCEPT, MEDIA_TYPE)
@@ -140,7 +141,7 @@ public class RestRequest<T> {
      */
     public HttpRequest put(String url, JsonObject json, String ... pathArgs){
         URI uri = baseUri.resolve(processPathArgs(url, pathArgs));
-        printDebugMessage(uri, Request.Type.PUT);
+        Shell.printDebug("Send REST request to '" + uri + "' with request type as '" + Request.Type.PUT + "'");
         return HttpRequest.newBuilder()
                 .uri(uri)
                 .header(HttpHeaders.ACCEPT, MEDIA_TYPE)
@@ -157,7 +158,7 @@ public class RestRequest<T> {
      */
     public HttpRequest delete(String url, String ... pathArgs) {
         URI uri = baseUri.resolve(processPathArgs(url, pathArgs));
-        printDebugMessage(uri, Request.Type.DELETE);
+        Shell.printDebug("Send REST request to '" + uri + "' with request type as '" + Request.Type.DELETE + "'");
         return HttpRequest.newBuilder()
                 .uri(uri)
                 .header(HttpHeaders.ACCEPT, MEDIA_TYPE)
@@ -190,11 +191,5 @@ public class RestRequest<T> {
 
         result.append(uri.substring(lastIdx));
         return result.toString();
-    }
-
-    private void printDebugMessage(URI uri, Request.Type type) {
-        if (!debugOn) return;
-
-        Shell.printDebug("Send REST request to '" + uri + "' with request type as '" + type + "'");
     }
 }

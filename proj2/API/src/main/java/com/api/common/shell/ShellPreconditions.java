@@ -7,6 +7,8 @@ package com.api.common.shell;
  * @author Francisco Parrinha   58360
  */
 public class ShellPreconditions {
+
+    /** Constants */
     public static final String DEFAULT_WRONG_ARG_SIZES_ERROR = "No expected arg sizes were given. ";
     public static final String WRONG_ARGS_MESSAGE = "Wrong argument list. Make sure you are following the right pattern ";
     public static final String LOGIN_ARGS = "'login username password'";
@@ -17,6 +19,7 @@ public class ShellPreconditions {
     public static final String CP_ARGS = "'cp username path1/file1 path2/file2'";
     public static final String RM_ARGS = "'rm username path/file'";
     public static final String FILE_ARGS = "'file username path'";
+
 
     /**
      * Checks if the given argument list size is wrong or not, considering a given desired size

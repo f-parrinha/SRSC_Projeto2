@@ -4,9 +4,10 @@ import com.api.*;
 import com.api.auth.SecureLogin;
 import com.api.common.shell.Shell;
 import com.api.common.shell.StorePasswords;
-import com.api.requests.SingleDataRequest;
-import com.api.requests.authenticate.*;
+import com.api.rest.requests.SingleDataRequest;
+import com.api.rest.requests.authenticate.*;
 import com.api.User;
+import com.api.services.AuthService;
 import com.api.services.AuthService;
 import com.api.utils.JwtTokenUtil;
 import com.api.utils.UtilsBase;
@@ -19,6 +20,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
 
 import javax.crypto.NoSuchPaddingException;
 import java.io.*;
@@ -33,13 +36,12 @@ import java.util.*;
 @RestController
 public class FAuth extends FServer implements AuthService<ResponseEntity<String>> {
 
-    /**
-     * Constants
-     */
+    /** Constants */
     public static final int PORT = 8082;
     public static final String KEYSTORE_PATH = "classpath:fauth-ks.jks";
     public static final String KEY_ALIAS = "fauth";
     public static final String TRUSTSTORE_PATH = "classpath:fauth-ts.jks";
+    private static String[] args;
     private static final int KEY_SIZE = 2048;
     private static final String SIGNATURE_ALGORITHM = "RSA";
     private KeyPair rsaKeyPair;
@@ -52,8 +54,8 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
     }
 
     @Bean
-    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> serverConfig() throws NoSuchAlgorithmException {
-        StorePasswords passwords = Shell.loadTrustKeyStoresPass();
+    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> serverConfig() {
+        StorePasswords passwords = Shell.loadTrustKeyStoresPass(args);
         users = new HashMap<>();
         usersInLoginProcess = new HashMap<>();
         rsaKeyPair = UtilsBase.generateKeyPair(SIGNATURE_ALGORITHM, KEY_SIZE);

@@ -4,10 +4,12 @@ import com.api.requests.authenticate.AuthenticatePasswordRequest;
 import com.api.requests.RestRequest;
 import com.api.services.AuthService;
 import com.client.AbstractClient;
+import io.netty.handler.ssl.SslContext;
 
 import javax.json.JsonObject;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;

@@ -1,7 +1,9 @@
 package com.api.services;
 
-import com.api.requests.CopyRequest;
-import com.api.requests.MkDirRequest;
+import com.api.rest.requests.CopyRequest;
+import com.api.rest.requests.LoginRequest;
+import com.api.rest.requests.MkDirRequest;
+import com.api.rest.requests.PutRequest;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -31,81 +33,71 @@ public interface DispatcherService<T> {
     /**
      * Requests "login" command
      *
+     * @param loginRequest the login request to be sent
      * @return Response (text)
      */
     T login(String arg1, String arg2) throws IOException, InterruptedException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException, ParseException;
 
     /**
      * Requests "ls" command
-     *
      * @param username who is requesting
      * @return response (text)
      */
-    T listFiles(String username) throws IOException, InterruptedException;
+    T listFiles(String username) ;
 
 
     /**
      * Requests "ls" command
-     *
      * @param username who is requesting
      * @param path     directory path to list the files
      * @return response (text)
      */
-    T listFiles(String username, String path) throws IOException, InterruptedException;
+    T listFiles(String username, String path) ;
 
     /**
      * Requests "mkdir" command
-     *
      * @param username who is requesting
+     * @param mkDirRequest record containing mandatory values for the folder creation on the FServer's FileManager
      * @return Response (text)
      */
-    T makeDirectory(String username, MkDirRequest mkDirRequest) throws IOException, InterruptedException;
+    T makeDirectory(String username, MkDirRequest mkDirRequest) ;
 
     /**
      * Request "put" command
-     *
      * @param username who is requesting
-     * @param path     where the put the file
-     * @param fileName the file name
+     * @param request contains parameters used for the file creation on the FServer's FileManager (path, name, content)
      * @return Response (text)
      */
-    T put(String username, String path, String fileName);
+    T put(String username, PutRequest request) ;
 
     /**
      * Request "get" command
-     *
      * @param username who is requesting
-     * @param path     where the put the file
-     * @param fileName the file name
+     * @param path     where the get the file
      * @return Response (text)
      */
-    T get(String username, String path, String fileName) throws IOException, InterruptedException;
+    T get(String username, String path) ;
 
     /**
      * Requests "cpy" command
-     *
      * @param username   who is requesting
      * @return Response (text)
      */
-    T copy(String username, CopyRequest copyRequest) throws IOException, InterruptedException;
+    T copy(String username, CopyRequest copyRequest) ;
 
     /**
      * Requests "rm" command
-     *
      * @param username who is requesting
      * @param path     path to file
-     * @param fileName name of the file to be removed
      * @return Response (text)
      */
-    T remove(String username, String path, String fileName) throws IOException, InterruptedException;
+    T remove(String username, String path) ;
 
     /**
      * Requests "file" command
-     *
      * @param username who is requesting
      * @param path     path to file
-     * @param fileName name of the file to inspect
      * @return Response (text)
      */
-    T file(String username, String path, String fileName) throws IOException, InterruptedException;
+    T file(String username, String path) ;
 }

@@ -1,10 +1,10 @@
 package com.server;
 
-import com.api.RestResponse;
+import com.api.rest.RestResponse;
 import com.api.access.PermissionsType;
 import com.api.common.shell.Shell;
 import com.api.common.shell.StorePasswords;
-import com.api.requests.SingleDataRequest;
+import com.api.rest.SingleDataRequest;
 import com.api.services.AccessService;
 import com.api.utils.JwtTokenUtil;
 import com.api.utils.UtilsBase;
@@ -34,13 +34,12 @@ import java.util.Map;
 @RestController
 public class FAccess extends FServer implements AccessService<ResponseEntity<String>> {
 
-    /**
-     * Constants
-     */
+    /** Constants */
     public static final int PORT = 8083;
     public static final String KEYSTORE_PATH = "classpath:faccess-ks.jks";
     public static final String KEY_ALIAS = "faccess";
     public static final String TRUSTSTORE_PATH = "classpath:faccess-ts.jks";
+    private static String[] args;
     private static final int KEY_SIZE = 2048;
     private static final String SIGNATURE_ALGORITHM = "RSA";
 
@@ -48,15 +47,21 @@ public class FAccess extends FServer implements AccessService<ResponseEntity<Str
     private static Map<String, PermissionsType> accessControlMap;
 
     public static void main(String[] args) {
+        FAccess.args = args;
         SpringApplication.run(FAccess.class, args);
         initializeAccessControl();
     }
 
     @Bean
-    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> serverConfig() throws NoSuchAlgorithmException {
-        StorePasswords passwords = Shell.loadTrustKeyStoresPass();
+    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> serverConfig() {
+        StorePasswords passwords = Shell.loadTrustKeyStoresPass(args);
         accessControlMap = new HashMap<>();
-        rsaKeyPair = UtilsBase.generateKeyPair(SIGNATURE_ALGORITHM, KEY_SIZE);
+
+        try {
+            rsaKeyPair = UtilsBase.generateKeyPair(SIGNATURE_ALGORITHM, KEY_SIZE);
+        } catch (NoSuchAlgorithmException e) {
+            Shell.printError("No such algorithm for RSA keypair.");
+        }
 
         return createWebServerFactory(PORT, KEYSTORE_PATH, KEY_ALIAS, TRUSTSTORE_PATH, passwords);
     }
@@ -117,6 +122,3 @@ public class FAccess extends FServer implements AccessService<ResponseEntity<Str
     }
 
 }
-
-
-

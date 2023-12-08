@@ -27,23 +27,22 @@ public abstract class ShellCommand {
     }
 
     /**
-     * @TODO This will not be useful in the future because it will pass one string
      * Receives a string containing both path and file descriptions and separates them into two strings
      * @param path_file path/filename string
      * @return (path, file)
      */
     protected String[] seperatePathAndFile(String path_file) {
+        if (!path_file.contains(String.valueOf(SLASH_CHAR))){
+            return new String[] {"", path_file};
+        }
+
+        // Contains a '/', which means there is a 'path' to the 'file'
         char[] pathFileAsChar = path_file.toCharArray();
         int splitIdx = pathFileAsChar.length - 1;     // Start at the end
 
         // Find for the first '/', counting from the end, getting the file name
         while (splitIdx > 0 && pathFileAsChar[splitIdx] != SLASH_CHAR){
             splitIdx--;
-        }
-
-        // Return empty if wrong input
-        if (splitIdx == 0) {
-            return new String[] { "", "" };
         }
 
         String path = path_file.substring(0, splitIdx);

@@ -1,4 +1,4 @@
-package com.api.requests;
+package com.api.rest.requests;
 
 import javax.json.Json;
 import javax.json.JsonObject;
