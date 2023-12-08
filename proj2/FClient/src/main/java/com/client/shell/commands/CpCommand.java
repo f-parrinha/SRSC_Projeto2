@@ -1,6 +1,6 @@
 package com.client.shell.commands;
 
-import com.api.requests.CopyRequest;
+import com.api.rest.requests.CopyRequest;
 import com.client.serviceClients.FDispatcherClient;
 import com.api.common.shell.ShellPreconditions;
 

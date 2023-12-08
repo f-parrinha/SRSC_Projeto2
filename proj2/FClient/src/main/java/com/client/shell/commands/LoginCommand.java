@@ -1,6 +1,6 @@
 package com.client.shell.commands;
 
-import com.api.requests.LoginRequest;
+import com.api.rest.requests.LoginRequest;
 import com.client.serviceClients.FDispatcherClient;
 import com.api.common.shell.ShellPreconditions;
 

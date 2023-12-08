@@ -7,6 +7,8 @@ import com.api.common.tls.TLSClientConfig;
 import com.api.common.tls.TLSConfigFactory;
 import com.client.serviceClients.FDispatcherClient;
 import com.client.shell.commands.*;
+import org.apache.catalina.Store;
+import org.springframework.boot.SpringApplication;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,7 +22,6 @@ import java.security.cert.CertificateException;
 
 /**
  * Class  FClientShell  creates an interactive shell to communicate with the FServer
- *
  * @author Martin Magdalinchev  58172
  * @author Francisco Parrinha   58360
  */
@@ -33,26 +34,35 @@ public class ClientShell extends Shell {
     private static final String DISPATCHER_URL = "https://localhost:8081";
     private static final String DEFAULT_ERROR_MESSAGE = "Unknown command.";
     private static final String DEFAULT_EXIT_MESSAGE = "Closing client.. See you next time! :)";
-    private static final String DEFAULT_WELCOME_MESSAGE = "Welcome to the FServer platform!";
 
-
-    public static void main(String[] args) throws IOException, UnrecoverableKeyException, CertificateException,
-            NoSuchAlgorithmException, KeyStoreException, URISyntaxException, KeyManagementException, InterruptedException {
-        StorePasswords passwords = Shell.loadTrustKeyStoresPass();
-        TLSClientConfig tls = TLSConfigFactory.getInstance().forClient()
-                .withConfigFile(CONFIG_PATH)
-                .withKeyStoreFile(KEYSTORE_FILE)
-                .withKeyStorePass(passwords.keyStorePass())
-                .withTrustStoreFile(TRUSTSTORE_FILE)
-                .withTrustStorePass(passwords.trustStorePass())
-                .build();
-        FDispatcherClient client = new FDispatcherClient(new URI(DISPATCHER_URL), tls.getSslContext(), tls.getSslParameters());
+    public static void main(String[] args) {
+        StorePasswords passwords = Shell.loadTrustKeyStoresPass(args);
+        FDispatcherClient client = null;
+        try {
+            TLSClientConfig tls = TLSConfigFactory.getInstance().forClient()
+                    .withConfigFile(CONFIG_PATH)
+                    .withKeyStoreFile(KEYSTORE_FILE)
+                    .withKeyStorePass(passwords.keyStorePass())
+                    .withTrustStoreFile(TRUSTSTORE_FILE)
+                    .withTrustStorePass(passwords.trustStorePass())
+                    .build();
+            client = new FDispatcherClient(new URI(DISPATCHER_URL), tls.getSslContext(), tls.getSslParameters());
+        } catch (URISyntaxException e) {
+            Shell.printError("Wrong URI syntax given.");
+            return;
+        }
 
         // Read commands...
-        Shell.printLineInput(DEFAULT_WELCOME_MESSAGE);
+        initText();
         String input = "";
         while (!input.equalsIgnoreCase(Command.Type.exit.toString())) {
-            executeCommand(client, CONSOLE.readLine().trim().split(EMPTY));
+            try {
+                executeCommand(client, CONSOLE.readLine().trim().split(EMPTY));
+            } catch (IOException e) {
+                Shell.printError("Unable to read input.");
+            } catch (InterruptedException e) {
+                Shell.printError("Interpreter was interrupted.");
+            }
         }
     }
 
@@ -62,7 +72,7 @@ public class ClientShell extends Shell {
      * @param input input command
      */
     private static void executeCommand(FDispatcherClient client, String[] input) throws IOException, InterruptedException {
-        if(ShellPreconditions.noCommandGiven(input)) { Shell.printLine(""); return; }    // Check empty input
+        if(ShellPreconditions.noCommandGiven(input)) { Shell.printInput(); return; }    // Check empty input
 
         // Read command
         String commandInput = input[0];
@@ -92,5 +102,23 @@ public class ClientShell extends Shell {
 
         // Enter input DASH
         Shell.printInput();
+    }
+
+    private static void initText() {
+        System.out.println();
+        Shell.printLine("Welcome to the FServer platform!");
+        Shell.printLine("A platform to store your folders and files, on the web!");
+        Shell.printLine("");
+        Shell.printLine("");
+        Shell.printLine("These are all of the available commands:");
+        Shell.printLine(" * login (username, password): use this command to authenticate yourself in the FServer platform");
+        Shell.printLine(" * ls (username): use this command to list all your folders in your 'root' directory");
+        Shell.printLine(" * ls (username, path): use this command to list all your folders at 'path'");
+        Shell.printLine(" * mkdir (username, path): use this command to create new folders in your FileManager");
+        Shell.printLine(" * put (username, path/file): use this command to put new files inside your folders in you FileManager");
+        Shell.printLine(" * get (username, path/file): use this command to get one 'file' from your FileManager at the given 'path'");
+        Shell.printLine("");
+        Shell.printLine("Authors: Francisco Parrinha and Martin Magdalinchev");
+        Shell.printLineInput("");
     }
 }

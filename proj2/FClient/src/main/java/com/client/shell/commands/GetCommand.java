@@ -29,12 +29,7 @@ public class GetCommand extends ShellCommand implements Command {
         String username = input[1];
         String path_file = input[2];
 
-        // Process input before sending request
-        String[] tmp = super.seperatePathAndFile(path_file);
-        String path = tmp[0];
-        String file = tmp[1];
-
-        var response = client.get(username, path, file);
+        var response = client.get(username, path_file);
         client.readResponse(response);
     }
 }

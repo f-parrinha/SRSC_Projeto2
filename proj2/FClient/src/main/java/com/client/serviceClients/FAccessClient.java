@@ -9,7 +9,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
 public class FAccessClient extends AbstractClient {
-    public FAccessClient(URI uri, SSLContext sslContext, SSLParameters sslParameters) throws NoSuchAlgorithmException, KeyManagementException {
+    public FAccessClient(URI uri, SSLContext sslContext, SSLParameters sslParameters) {
         super(uri, sslContext, sslParameters);
     }
 }

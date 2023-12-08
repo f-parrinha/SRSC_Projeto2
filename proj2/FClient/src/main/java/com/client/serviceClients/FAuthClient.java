@@ -15,7 +15,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 
 public class FAuthClient extends AbstractClient {
-    public FAuthClient(URI uri, SSLContext sslContext, SSLParameters sslParameters) throws NoSuchAlgorithmException, KeyManagementException {
+    public FAuthClient(URI uri, SSLContext sslContext, SSLParameters sslParameters) {
         super(uri, sslContext, sslParameters);
     }
 }

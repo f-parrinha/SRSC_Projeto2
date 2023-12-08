@@ -5,10 +5,13 @@ import org.springframework.http.HttpStatus;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Objects;
 
 
@@ -61,13 +64,29 @@ public abstract class AbstractClient {
             return;
         }
 
+        String responseText = response.body();
         HttpStatus status = HttpStatus.resolve(response.statusCode());
         switch (Objects.requireNonNull(status)) {
-            case OK -> Shell.printResult(response.body());
-            case NOT_FOUND -> Shell.printError("Not Found");
-            case BAD_REQUEST -> Shell.printError("Bad Request");
-            case FORBIDDEN -> Shell.printError("Forbidden");
+            case OK -> Shell.printResult(responseText == null ? "Ok." : responseText);
+            case NOT_FOUND -> Shell.printError(responseText == null ? "Not Found" : responseText);
+            case BAD_REQUEST -> Shell.printError(responseText == null ? "Bad Request" : responseText);
+            case FORBIDDEN -> Shell.printError(responseText == null ? "Forbidden" : responseText);
+            case CONFLICT -> Shell.printError(responseText == null ? "Conflict in the interaction." : responseText);
             default -> Shell.printError("Unexpected value -> " + status);
+        }
+        Shell.printLine("");
+    }
+
+    /**
+     * Sends a given request, if the destination is online
+     * @param request request to send
+     * @return response or null, if it is not possible to send the given request
+     */
+    protected HttpResponse<String> sendRequest(HttpRequest request) {
+        try {
+            return client.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (IOException | InterruptedException e) {
+            return null;    // Nothing to do here...
         }
     }
 }

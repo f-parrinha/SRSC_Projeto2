@@ -1,6 +1,6 @@
 package com.client.shell.commands;
 
-import com.api.requests.MkDirRequest;
+import com.api.rest.requests.MkDirRequest;
 import com.client.serviceClients.FDispatcherClient;
 import com.api.common.shell.ShellPreconditions;
 

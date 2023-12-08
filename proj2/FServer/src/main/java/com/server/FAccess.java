@@ -18,14 +18,16 @@ public class FAccess extends FServer {
     public static final String KEYSTORE_PATH = "classpath:faccess-ks.jks";
     public static final String KEY_ALIAS = "faccess";
     public static final String TRUSTSTORE_PATH = "classpath:faccess-ts.jks";
+    private static String[] args;
 
     public static void main(String[] args) {
+        FAccess.args = args;
         SpringApplication.run(FAccess.class, args);
     }
 
     @Bean
     public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> serverConfig() {
-        StorePasswords passwords = Shell.loadTrustKeyStoresPass();
+        StorePasswords passwords = Shell.loadTrustKeyStoresPass(args);
         return createWebServerFactory(PORT, KEYSTORE_PATH, KEY_ALIAS, TRUSTSTORE_PATH, passwords);
     }
 }
