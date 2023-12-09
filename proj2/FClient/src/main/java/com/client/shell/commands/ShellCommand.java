@@ -12,6 +12,8 @@ import com.client.serviceClients.FDispatcherClient;
 public abstract class ShellCommand {
 
     /** Constants */
+    public static final String SEARCH_FOLDER = "SEARCH_FOLDER";
+    public static final String SEARCH_FILE = "SEARCH_FILE";
     private static final char SLASH_CHAR = '/';
 
     /** Variables */
@@ -33,7 +35,7 @@ public abstract class ShellCommand {
      */
     protected String[] seperatePathAndFile(String path_file) {
         if (!path_file.contains(String.valueOf(SLASH_CHAR))){
-            return new String[] {"", path_file};
+            return  new String[] { "", path_file };
         }
 
         // Contains a '/', which means there is a 'path' to the 'file'

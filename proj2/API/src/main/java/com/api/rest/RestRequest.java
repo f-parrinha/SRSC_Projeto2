@@ -46,29 +46,7 @@ public class RestRequest<T> {
      */
     public static RestRequest<?> getInstance(URI baseUri) {
         request = request == null ? new RestRequest<>(baseUri) : request;
-        request.setDebugOn(false);
         return request;
-    }
-
-    /**
-     * Returns the instance of RestRequest (with custom debug mode)
-     * @param baseUri base uri for the rquest (server uri)
-     * @return RestRequest singleton
-     */
-    public static RestRequest<?> getInstance(URI baseUri, boolean debugOn) {
-        request = request == null ? new RestRequest<>(baseUri, debugOn) : request;
-        request.setDebugOn(debugOn);
-        return request;
-    }
-
-
-
-    public boolean isDebugOn() {
-        return debugOn;
-    }
-
-    public void setDebugOn(boolean debugOn) {
-        this.debugOn = debugOn;
     }
 
     /**

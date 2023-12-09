@@ -3,6 +3,7 @@ package com.client.shell.commands;
 import com.api.common.Utils;
 import com.api.common.shell.Shell;
 import com.api.rest.requests.PutRequest;
+import com.client.AbstractClient;
 import com.client.serviceClients.FDispatcherClient;
 import com.api.common.shell.ShellPreconditions;
 
@@ -21,7 +22,6 @@ import java.util.Base64;
  */
 public class PutCommand extends ShellCommand implements Command {
     public static int ARG_SIZE = 2;
-    public static final String CURRENT_DIR = System.getProperty("user.dir");
 
 
     public PutCommand(FDispatcherClient client) {
@@ -43,7 +43,7 @@ public class PutCommand extends ShellCommand implements Command {
         String file = tmp[1];
 
         // Get file
-        try (InputStream content = new FileInputStream(CURRENT_DIR + "/" + file)) {
+        try (InputStream content = new FileInputStream(System.getProperty("user.dir") + "/" + file)) {
             var response = client.put(username, new PutRequest(path, file, Utils.encodeFileToJSON(content)));
             client.readResponse(response);
         } catch (FileNotFoundException e){

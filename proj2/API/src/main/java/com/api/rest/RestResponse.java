@@ -11,6 +11,7 @@ import java.util.Objects;
 public class RestResponse {
 
     /** Constants */
+    public static final String DOWNLOAD_CODE = "#DOWNLOAD:";
     public static final String OK_MESSAGE = "200 -> ";
     public static final String NOT_FOUND_MESSAGE = "404 -> ";
     public static final String FORBIDDEN_MESSAGE = "403 -> ";

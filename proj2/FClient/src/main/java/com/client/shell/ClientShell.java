@@ -117,6 +117,9 @@ public class ClientShell extends Shell {
         Shell.printLine(" * mkdir (username, path): use this command to create new folders in your FileManager");
         Shell.printLine(" * put (username, path/file): use this command to put new files inside your folders in you FileManager");
         Shell.printLine(" * get (username, path/file): use this command to get one 'file' from your FileManager at the given 'path'");
+        Shell.printLine(" * cp (username, path/file1, path/file2): use this command to copy file 1 to file 2");
+        Shell.printLine(" * rm (username, path/file): use this command to remove one file");
+        Shell.printLine(" * file (username, path/file): use this command to view a file's properties");
         Shell.printLine("");
         Shell.printLine("Authors: Francisco Parrinha and Martin Magdalinchev");
         Shell.printLineInput("");

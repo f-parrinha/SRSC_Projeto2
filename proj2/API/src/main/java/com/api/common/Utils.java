@@ -1,6 +1,7 @@
 package com.api.common;
 
 import com.api.common.shell.Shell;
+import com.api.rest.RestResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -54,6 +55,7 @@ public class Utils {
             byte[] contentBytes = content.readAllBytes();
             result = Base64.getEncoder().encodeToString(contentBytes);
         } catch (IOException e) {
+            e.printStackTrace();
             Shell.printError("Could not read content during file encoding.");
         }
 
@@ -69,5 +71,19 @@ public class Utils {
         byte[] contentBytes = Base64.getDecoder().decode(encodedContent);
 
         return new ByteArrayInputStream(contentBytes);
+    }
+    public static String generateDownloadCode(String fileName, String encodedContent) {
+        return RestResponse.DOWNLOAD_CODE + fileName.length() + fileName + encodedContent;
+    }
+
+    public static String[] retrieveDownload(String downloadContent) {
+        int fileLastIdx = Integer.parseInt(downloadContent.substring(0, 1)) + 1;
+
+        String fileName = downloadContent.substring(1, fileLastIdx);
+        String content = downloadContent.substring(fileLastIdx);
+        Shell.printDebug(downloadContent);
+        Shell.printDebug(fileName);
+        Shell.printDebug(content);
+        return new String[] {fileName, content};
     }
 }
