@@ -179,11 +179,18 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
         return new RestResponse(status).buildResponse(response.body());
     }
 
-    @PostMapping("/cp/{username}")
+    @PutMapping("/cp/{username}")
     @Override
     public ResponseEntity<String> copy(@PathVariable String username, @RequestBody CopyRequest copyRequest) {
-        return ResponseEntity.ok("Arquivo " + copyRequest.sourceFile() + " copiado de " + copyRequest.sourcePath() +
-                " para " + copyRequest.destPath() + " com o nome " + copyRequest.destFile());
+        var response = storageClient.copyFile(username, copyRequest);
+
+        // Check if FStorage is on
+        if (response == null) {
+            return new RestResponse(HttpStatus.NOT_FOUND).buildResponse("No response came from the storage server. It may be currently off.");
+        }
+
+        HttpStatus status = HttpStatus.resolve(response.statusCode());
+        return new RestResponse(status).buildResponse(response.body());
     }
 
     @DeleteMapping("/rm/{username}/{*path}")
@@ -199,10 +206,17 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
         return new RestResponse(status).buildResponse(response.body());
     }
 
-    @GetMapping("/file/{username}/{path}")
+    @GetMapping("/file/{username}/{*path}")
     @Override
     public ResponseEntity<String> file(@PathVariable String username, @PathVariable String path) {
-        return ResponseEntity.ok("Informações sobre o arquivo para " + username + " no caminho " + path);
+        var response = storageClient.fileProperties(username, path.substring(1));
+
+        if (response == null) {
+            return new RestResponse(HttpStatus.NOT_FOUND).buildResponse("No response came from the storage server. It may be currently off.");
+        }
+
+        HttpStatus status = HttpStatus.resolve(response.statusCode());
+        return new RestResponse(status).buildResponse(response.body());
     }
 
     @GetMapping("/access/{username}")

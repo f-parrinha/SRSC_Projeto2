@@ -5,6 +5,7 @@ import com.api.common.shell.ShellPreconditions;
 import com.api.rest.RestResponse;
 import com.api.common.shell.Shell;
 import com.api.common.shell.StorePasswords;
+import com.api.rest.requests.CopyRequest;
 import com.api.rest.requests.MkDirRequest;
 import com.api.rest.requests.PutRequest;
 import com.api.services.StorageService;
@@ -83,7 +84,7 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
 
         // Check if path is valid
         if(Utils.isPathInvalid(path)) {
-            return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("There are empty folders on the path.");
+            return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("The provided path is invalid. Check for incorrect '/' characters.");
         }
 
         // Check if folder at path exists
@@ -109,7 +110,7 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
 
         // Check if path is valid
         if(Utils.isPathInvalid(mkDirRequest.path())) {
-            return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("There are empty folders on the path.");
+            return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("The provided path is invalid. Check for incorrect '/' characters.");
         }
 
         // Check if directory already exists
@@ -134,17 +135,36 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
 
         // Check if path is valid
         if(Utils.isPathInvalid(putRequest.path())) {
-            return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("There are empty folders on the path.");
+            return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("The provided path is invalid. Check for incorrect '/' characters.");
         }
 
-        // Check if file already exists
-        if (!fileManager.createFile(username, putRequest.path(), putRequest.fileName(), Utils.decodeToFile(putRequest.encodedContent()))) {
-            return new RestResponse(HttpStatus.CONFLICT).buildResponse("File already exists.");
+        Folder parent = fileManager.getFolder(putRequest.path());
+
+        // Check if parent folder exists
+        if (parent == null) {
+            return new RestResponse(HttpStatus.NOT_FOUND).buildResponse("Folder at '" + putRequest.path() + "' was not found.");
         }
 
-        // Updates user fileManager
+        File file = fileManager.getFile(parent, putRequest.fileName());
+        File newfile = new File.Builder()
+                .withName(putRequest.fileName())
+                .withAuthor(username)
+                .withPath(putRequest.path())
+                .withContent(Utils.decodeToFile(putRequest.encodedContent()))
+                .build();
+
+        // Update file if it already exists
+        if (file != null) {
+            fileManager.updateFile(parent, file, newfile);
+            fileManagers.put(username, fileManager);
+
+            return new RestResponse(HttpStatus.OK).buildResponse("Updated file with name '" +  file.getName() + "' and with path '"+ file.getPath() + "' with new content.");
+        }
+
+        // Created new File
+        fileManager.createFile(parent, newfile);
         fileManagers.put(username, fileManager);
-        return new RestResponse(HttpStatus.OK).buildResponse("Created new file with name '" + putRequest.fileName() + "' and with path '"+ putRequest.path() + "'");
+        return new RestResponse(HttpStatus.OK).buildResponse("Created new file with name '" + newfile.getName() + "' and with path '"+ newfile.getPath() + "'");
     }
 
     @GetMapping("/storage/get/{username}/{*path}")
@@ -161,19 +181,26 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
 
         // Check if path is valid
         if(Utils.isPathInvalid(path)) {
-            return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("There are empty folders on the path.");
+            return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("The provided path is invalid. Check for incorrect '/' characters.");
         }
 
-        // Create new file
-        String[] tokens = path.split("/");
-        File newFile = fileManager.getFile(Utils.createPathString(Arrays.copyOfRange(tokens, 0, tokens.length - 1)), tokens[tokens.length - 1]);
+        String[] path_file = separatePathAndFile(path);
+        Folder parent = fileManager.getFolder(path_file[0]);
 
-        // Check if directory already exists
-        if (newFile == null) {
+        // Check if parent folder exists
+        if (parent == null) {
+            return new RestResponse(HttpStatus.NOT_FOUND).buildResponse("Folder at '" + path_file[0] + "' was not found.");
+        }
+
+        File file = fileManager.getFile(parent, path_file[1]);
+
+        // Check if file does not exist
+        if (file == null) {
             return new RestResponse(HttpStatus.CONFLICT).buildResponse("File does not exist.");
         }
 
-        return new RestResponse(HttpStatus.OK).buildResponse("Downloaded file '" + newFile.getName() + "'.");
+        var encodedContent = Utils.encodeFileToJSON(file.getContent());
+        return new RestResponse(HttpStatus.OK).buildResponse("Downloaded file '" + file.getName() + "'." + Utils.generateDownloadCode(file.getName(), encodedContent));
     }
 
     @DeleteMapping("/storage/rm/{username}/{*path}")
@@ -182,7 +209,6 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
         FileManager fileManager = fileManagers.get(username);
         path = path.substring(1);           // Remove '/' from the beginning (due to URI mapping conflicts)
 
-
         // Check if user has content first
         if (fileManager == null) {
             return new RestResponse(HttpStatus.NOT_FOUND).buildResponse("User '" + username + "' does not have any content yet.");
@@ -190,12 +216,18 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
 
         // Check if path is valid
         if(Utils.isPathInvalid(path)) {
-            return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("There are empty folders on the path.");
+            return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("The provided path is invalid. Check for incorrect '/' characters.");
         }
 
-        // Remove file
-        String[] tokens = path.split("/");
-        File removedFile = fileManager.removeFile(Utils.createPathString(Arrays.copyOfRange(tokens, 0, tokens.length - 1)), tokens[tokens.length - 1]);
+        String[] path_file = separatePathAndFile(path);
+        Folder parent = fileManager.getFolder(path_file[0]);
+
+        // Check if parent folder exists
+        if (parent == null) {
+            return new RestResponse(HttpStatus.NOT_FOUND).buildResponse("Folder at '" + path_file[0] + "' was not found.");
+        }
+
+        File removedFile = fileManager.removeFile(parent, path_file[1]);
 
         // Check if directory already exists
         if (removedFile == null) {
@@ -205,8 +237,92 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
         return new RestResponse(HttpStatus.OK).buildResponse("Removed file '" + removedFile.getName() + "' from storage.");
     }
 
+    @PutMapping("/storage/cp/{username}")
     @Override
-    public ResponseEntity<String> copyFile() {
-        return null;
+    public ResponseEntity<String> copyFile(@PathVariable String username, @RequestBody CopyRequest cpRequest) {
+        FileManager fileManager = fileManagers.get(username);
+
+        // Check if user has content first
+        if (fileManager == null) {
+            return new RestResponse(HttpStatus.NOT_FOUND).buildResponse("User '" + username + "' does not have any content yet.");
+        }
+
+        // Check parent folders
+        Folder srcParent = fileManager.getFolder(cpRequest.sourcePath());
+        Folder destParent = fileManager.getFolder(cpRequest.destPath());
+        if (srcParent == null) {
+            return new RestResponse(HttpStatus.NOT_FOUND).buildResponse("Source folder at '" + cpRequest.sourcePath() + "' was not found.");
+        }
+        if (destParent == null) {
+            return new RestResponse(HttpStatus.NOT_FOUND).buildResponse("Destination folder at '" + cpRequest.destPath() + "' was not found.");
+        }
+
+        File fileToCopy = fileManager.getFile(srcParent, cpRequest.sourceFile());
+
+        // Check if source file exists
+        if (fileToCopy == null) {
+            return new RestResponse(HttpStatus.CONFLICT).buildResponse("File at source path not found.");
+        }
+
+        File destFile = fileManager.getFile(destParent, cpRequest.destFile());
+        File copyFile = new File.Builder()
+                .withAuthor(fileToCopy.getAuthor())
+                .withContent(fileToCopy.getContent())
+                .withName(cpRequest.destFile() != null && !cpRequest.destFile().isEmpty() ? cpRequest.destFile() : fileToCopy.getName())
+                .withPath(cpRequest.destPath())
+                .withIsCopied(true)
+                .build();
+
+        // Update file if it already exists
+        if (destFile != null) {
+            fileManager.updateFile(destParent, destFile, copyFile);
+            fileManagers.put(username, fileManager);
+            return new RestResponse(HttpStatus.OK).buildResponse("Updated file with name '" + destFile.getName() + "' and with path '" + destFile.getPath() + "' with new content.");
+        }
+
+        // Check if new file already exists
+        fileManager.createFile(destParent, copyFile);
+        return new RestResponse(HttpStatus.OK).buildResponse("Copied file '"+fileToCopy.getName()+"' from '"+fileToCopy.getPath()+"' to '"+copyFile.getPath()+"/"+copyFile.getName()+"'");
+    }
+
+    @GetMapping("/storage/file/{username}/{*path}")
+    @Override
+    public ResponseEntity<String> fileProperties(@PathVariable String username, @PathVariable String path) {
+        FileManager fileManager = fileManagers.get(username);
+        path = path.substring(1);           // Remove '/' from the beginning (due to URI mapping conflicts)
+
+        // Check if user has content first
+        if (fileManager == null) {
+            return new RestResponse(HttpStatus.NOT_FOUND).buildResponse("User '" + username + "' does not have any content yet.");
+        }
+
+        // Check if path is valid
+        if(Utils.isPathInvalid(path)) {
+            return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("The provided path is invalid. Check for incorrect '/' characters.");
+        }
+
+        String[] path_file = separatePathAndFile(path);
+        Folder parent = fileManager.getFolder(path_file[0]);
+
+        // Check if parent folder exists
+        if (parent == null) {
+            return new RestResponse(HttpStatus.NOT_FOUND).buildResponse("Folder at '" + path_file[0] + "' was not found.");
+        }
+
+        File file = fileManager.getFile(parent, path_file[1]);
+
+        // Check if file does not exist
+        if (file == null) {
+            return new RestResponse(HttpStatus.CONFLICT).buildResponse("File does not exist.");
+        }
+
+        return new RestResponse(HttpStatus.OK).buildResponse(file.listProperties());
+    }
+
+    private String[] separatePathAndFile(String path) {
+        String[] tokens = path.split("/");
+        String parentPath = Utils.createPathString(Arrays.copyOfRange(tokens, 0, tokens.length - 1));
+        String fileName = tokens[tokens.length - 1];
+        return new String[] {parentPath, fileName};
     }
 }

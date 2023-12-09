@@ -1,5 +1,7 @@
 package com.server.fileManager;
 
+import java.time.LocalDate;
+
 /**
  * Class  Directory  represents a directory in the file manager system.
  * @author Martin Magdalinchev  58172
@@ -125,6 +127,21 @@ public class Folder extends Directory {
         return true;
     }
 
+    /**
+     * Updates an exiting file in the folder
+     * PRE: file must not be null
+     * PRE: newFile must not be null
+     * @param file file to update
+     * @param newFile new file
+     * @return updated file
+     */
+    public File updateFile(File file, File newFile) {
+        file.setLastUpdateDate(LocalDate.now());
+        file.setContent(newFile.getContent());
+
+        return file;
+    }
+
 
     /**
      * Removes one child from the folder
@@ -132,6 +149,8 @@ public class Folder extends Directory {
      * @return removed folder
      */
     public Folder removeFolder(String folder) {
+        if(foldersCounter == 0) return null;
+
         SearchResult result = binarySearch(folder, folders, foldersCounter);
         int idx = result.index();
 
@@ -157,6 +176,8 @@ public class Folder extends Directory {
      * @return removed file
      */
     public File removeFile(String file) {
+        if(filesCounter == 0) return null;
+
         SearchResult result = binarySearch(file, files, filesCounter);
         int idx = result.index();
 

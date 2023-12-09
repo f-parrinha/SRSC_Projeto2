@@ -48,7 +48,6 @@ public class RestRequest<T> {
         if(request == null)
             request = new RestRequest<>(baseUri);
         request.setUri(baseUri);
-        request.setDebugOn(false);
         return request;
     }
 
@@ -87,7 +86,7 @@ public class RestRequest<T> {
      */
     public HttpRequest get(String url) {
         URI uri = baseUri.resolve(processPathArgs(url));
-        printDebugMessage(uri, Request.Type.GET);
+        Shell.printDebug("Send REST request to '" + uri + "' with request type as '" + Request.Type.GET + "'");
         return HttpRequest.newBuilder()
                 .uri(uri)
                 .header(HttpHeaders.ACCEPT, MEDIA_TYPE)

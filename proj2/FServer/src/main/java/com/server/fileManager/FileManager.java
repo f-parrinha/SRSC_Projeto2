@@ -12,7 +12,6 @@ import com.api.common.shell.Shell;
  */
 public class FileManager {
     public static final String ROOT = "root";
-    public static final String DIR_DIVIDER =  "/";
 
     private final Folder rootDirectory;
 
@@ -64,29 +63,22 @@ public class FileManager {
 
     /**
      * Creates a new file at a given by path
-     * @param author author of the file
-     * @param path path to parent folder
-     * @param fileName name of the new file
-     * @param content file's content
+     * @param file file to be created
      * @return true if it created, false if not
      */
-    public boolean createFile(String author, String path, String fileName, InputStream content) {
-        Folder parent = getFolder(path);
+    public boolean createFile(Folder parent, File file) {
+        return parent.addFile(file);    // Check if it did not create
+    }
 
-        // Parent folder at path was not found
-        if (parent == null) {
-            return false;
-        }
-
-        File file = new File.Builder()
-                .withName(fileName)
-                .withPath(path)
-                .withContent(content)
-                .withAuthor(author)
-                .build();
-
-        // Check if it did not create
-        return parent.addFile(file);
+    /**
+     * Updates a given a file in a given folder with new information from another given file
+     * @param parent parent directory, where the file to update resides
+     * @param file file to update
+     * @param newFile file with new content
+     * @return updated file
+     */
+    public File updateFile(Folder parent, File file, File newFile) {
+        return parent.updateFile(file, newFile);
     }
 
     /**
@@ -95,7 +87,7 @@ public class FileManager {
      * @return directory
      */
     public Folder getFolder(String path) {
-        if (path == null || path.isEmpty()) {
+        if (path == null || path.isEmpty() || path.equals(Directory.ROOT_DIR)) {
             return rootDirectory;
         }
 
@@ -104,7 +96,6 @@ public class FileManager {
 
         // Travel through path
         for (var folder : paths) {
-            Shell.printDebug(folder);
             Folder next = current.getFolder(folder);
 
             // Check if it does not exit
@@ -120,23 +111,21 @@ public class FileManager {
 
     /**
      * Gets the requested 'file' at 'path'
-     * @param path path to parent folder
+     * @param parent parent folder that houses the file
      * @param file file to download
      * @return file to download
      */
-    public File getFile(String path, String file) {
-        Folder parent = getFolder(path);
+    public File getFile(Folder parent, String file) {
         return parent.getFile(file);
     }
 
     /**
      * Removes a file from the manager
-     * @param path path to parent folder
+     * @param parent parent folder that houses the file
      * @param file file to remove
      * @return removed file
      */
-    public File removeFile(String path, String file) {
-        Folder parent = getFolder(path);
+    public File removeFile(Folder parent, String file) {
         return parent.removeFile(file);
     }
 }

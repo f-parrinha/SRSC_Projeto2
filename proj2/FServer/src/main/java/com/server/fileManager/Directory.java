@@ -1,6 +1,7 @@
 package com.server.fileManager;
 
 public abstract class Directory {
+    public static final String ROOT_DIR = ".";
     public enum Type {
         Folder,
         File;
@@ -12,9 +13,9 @@ public abstract class Directory {
             return directory instanceof Folder[] ? Folder : File;
         }
     }
-    private String path;
-    private String name;
-    private Directory parent;
+    protected String path;
+    protected String name;
+    protected Directory parent;
 
     public Directory() {
         this.parent = null;
@@ -26,7 +27,7 @@ public abstract class Directory {
         return name;
     }
     public String getPath() {
-        return path;
+        return path.isEmpty() ? ROOT_DIR : path;
     }
     public Directory getParent() {
         return parent;

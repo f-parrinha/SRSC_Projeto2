@@ -1,7 +1,14 @@
 package com.server.fileManager;
 
+import com.api.common.shell.Shell;
+
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.stream.Collectors;
 
 /**
  * Class  File  represents a file in the file manager system.
@@ -13,6 +20,7 @@ public class File extends Directory{
     private LocalDate lastUpdateDate;
     private InputStream content;
     private String author;
+    private boolean isCopied;
 
 
     public File() {
@@ -33,6 +41,9 @@ public class File extends Directory{
     public String getAuthor() {
         return author;
     }
+    public boolean isCopied() {
+        return isCopied;
+    }
 
     /** Setters */
     public void setContent(InputStream content) {
@@ -43,6 +54,32 @@ public class File extends Directory{
     }
     private void setAuthor(String author) {
         this.author = author;
+    }
+    private void setIsCopied(boolean copied) {
+        this.isCopied = copied;
+    }
+
+    public String listProperties() {
+        String result = "Listing...\n\n";
+
+        String contentText = new BufferedReader(
+                new InputStreamReader(content, StandardCharsets.UTF_8))
+                .lines()
+                .collect(Collectors.joining("\n"));
+        try {
+            content.reset();
+        } catch (IOException e) {
+            Shell.printError("There was an IO problem while reading file's content.");
+        }
+
+        result = result.concat("\tName: " + name + "\n");
+        result = result.concat("\tPath: " + (path == null || path.isEmpty() ? "(root)" : path) + "\n");
+        result = result.concat("\tAuthor: " + author + "\n");
+        result = result.concat("\tCreation date: " + creationDate.toString() + "\n");
+        result = result.concat("\tLast update date: " + lastUpdateDate.toString() + "\n");
+        result = result.concat("\tIs original: " + (!isCopied ? "yes" : "no") + "\n");
+        result = result.concat("\tContent: " + contentText);
+        return result;
     }
 
     public static class Builder {
@@ -74,6 +111,10 @@ public class File extends Directory{
         }
         public Builder withContent(InputStream content) {
             file.setContent(content);
+            return this;
+        }
+        public Builder withIsCopied(boolean copied) {
+            file.setIsCopied(copied);
             return this;
         }
     }

@@ -129,7 +129,7 @@ public class FDispatcherClient extends AbstractClient implements DispatcherServi
     @Override
     public HttpResponse<String> copy(String username, CopyRequest copyRequest) {
         JsonObject json = copyRequest.serialize();
-        HttpRequest request = RestRequest.getInstance(baseUri).post("/cp/{username}", json, username);
+        HttpRequest request = RestRequest.getInstance(baseUri).put("/cp/{username}", json, username);
         return sendRequest(request);
     }
 

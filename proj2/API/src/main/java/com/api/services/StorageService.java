@@ -1,5 +1,6 @@
 package com.api.services;
 
+import com.api.rest.requests.CopyRequest;
 import com.api.rest.requests.MkDirRequest;
 import com.api.rest.requests.PutRequest;
 
@@ -52,6 +53,19 @@ public interface StorageService<T> {
      */
     T removeFile(String username, String path);
 
-    /** @TODO */
-    T copyFile();
+    /**
+     * Copies one file from one location to another
+     * @param username owner
+     * @param cpRequest copy request record containing the necessary information for the request
+     * @return copied file
+     */
+    T copyFile(String username, CopyRequest cpRequest);
+
+    /**
+     * Lists a file's properties. The file location is given by 'path'
+     * @param username owner
+     * @param path path to file
+     * @return files properties as String
+     */
+    T fileProperties(String username, String path);
 }
