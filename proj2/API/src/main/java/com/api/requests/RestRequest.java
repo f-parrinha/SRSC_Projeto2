@@ -44,7 +44,7 @@ public class RestRequest<T> {
      * @return RestRequest singleton
      */
     public static RestRequest<?> getInstance(URI baseUri) {
-        request = request == null ? new RestRequest<>(baseUri) : request;
+        request = new RestRequest<>(baseUri);
         request.setDebugOn(false);
         return request;
     }
@@ -55,7 +55,7 @@ public class RestRequest<T> {
      * @return RestRequest singleton
      */
     public static RestRequest<?> getInstance(URI baseUri, boolean debugOn) {
-        request = request == null ? new RestRequest<>(baseUri, debugOn) : request;
+        request =  new RestRequest<>(baseUri, debugOn);
         request.setDebugOn(debugOn);
         return request;
     }
@@ -77,7 +77,10 @@ public class RestRequest<T> {
      * @return HttpRquest GET object
      */
     public HttpRequest get(String url) {
+        System.out.println("URL: " + url);
+        System.out.println("Base uri: " + baseUri);
         URI uri = baseUri.resolve(processPathArgs(url));
+        System.out.println("Resolved uri: " + uri);
         printDebugMessage(uri, Request.Type.GET);
         return HttpRequest.newBuilder()
                 .uri(uri)

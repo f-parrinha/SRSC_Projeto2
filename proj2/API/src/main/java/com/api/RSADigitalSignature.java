@@ -1,6 +1,7 @@
 package com.api;
 
 import java.security.*;
+import java.util.Arrays;
 
 public class RSADigitalSignature {
 
@@ -9,6 +10,9 @@ public class RSADigitalSignature {
 
     public RSADigitalSignature() throws NoSuchAlgorithmException {
         keyPair = generateRSAKeyPair();
+        System.out.println("RSA Key Pair generated succefully.");
+        System.out.println("RSA Public Key: " + Arrays.toString(keyPair.getPublic().getEncoded()));
+        System.out.println("RSA Private Key: " + keyPair.getPrivate());
     }
 
     private KeyPair generateRSAKeyPair() throws NoSuchAlgorithmException {

@@ -1,7 +1,7 @@
 package com.server;
 
 import com.api.*;
-import com.api.auth.AuthenticationToken;
+import com.api.utils.JwtTokenUtil;
 import com.api.utils.UtilsBase;
 import com.api.common.shell.Shell;
 import com.api.common.shell.StorePasswords;
@@ -29,7 +29,6 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 
-import java.text.ParseException;
 import java.util.Objects;
 
 
@@ -53,18 +52,19 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
     public static final InputStream KEYSTORE_FILE = FDispatcher.class.getClassLoader().getResourceAsStream("fdispatcher-ks.jks");
     public static final InputStream TRUSTSTORE_FILE = FDispatcher.class.getClassLoader().getResourceAsStream("fdispatcher-ts.jks");
     private static PublicKey authRSAPublicKey;
+    private static PublicKey accessRSAPublicKey;
     /**
      * Variables
      */
     private FStorageClient storageClient;
     private static FAuthClient authClient;
-    private FAccessClient accessClient;
+    private static FAccessClient accessClient;
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, InterruptedException {
         SpringApplication.run(FDispatcher.class, args);
+        requestAccessRSAPublicKey();
         requestAuthRSAPublicKey();
     }
-
 
     @Bean
     public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> serverConfig() throws IOException, UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, InterruptedException {
@@ -150,15 +150,22 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
         return ResponseEntity.ok("Informações sobre o arquivo " + file + " para " + username + " no caminho " + path);
     }
 
-    @GetMapping("/checkToken")
-    public ResponseEntity<String> yourEndpoint(@RequestHeader("Authorization") String authorizationHeader) throws ParseException {
-        // Extract the token from the Authorization header
-        String token = AuthenticationToken.extractToken(authorizationHeader);
-        System.out.println("Token: " + token);
-        if (AuthenticationToken.verifyToken(token, authRSAPublicKey))
-            return ResponseEntity.ok("Request processed successfully");
-        // Process the token as needed
-        return new RestResponse(HttpStatus.UNAUTHORIZED).buildResponse("Invalid Token!");
+    @GetMapping("/access/{username}")
+    private ResponseEntity<String> requestAccessToken(@PathVariable String username, @RequestHeader("Authorization") String authorizationHeader) {
+        try {
+            String authToken = JwtTokenUtil.extractToken(authorizationHeader);
+
+            if (!JwtTokenUtil.verifyJwtToken(authToken, authRSAPublicKey))
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid authentication token");
+
+            HttpResponse<String> responseEntity = accessClient.requestAccessControlToken(authToken, username);
+            HttpStatus status = HttpStatus.resolve(responseEntity.statusCode());
+
+            return new RestResponse(status).buildResponse(responseEntity.body());
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing request");
+        }
     }
 
     /**
@@ -177,6 +184,25 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
         if (Objects.requireNonNull(status).is2xxSuccessful()) {
             AuthRSAPublicKey key = AuthRSAPublicKey.fromJsonString(responseEntity.body());
             authRSAPublicKey = UtilsBase.createRSAPublicKey(key.key());
+        }
+    }
+
+    /**
+     *  Makes a request to the FAccess module, seeking to obtain the RSA Public Key in order to be able to verify
+     *  tokens authenticity
+     *
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeySpecException
+     */
+    private static void requestAccessRSAPublicKey() throws IOException, InterruptedException, NoSuchAlgorithmException, InvalidKeySpecException {
+        HttpResponse<String> responseEntity = accessClient.rsaPublicKeyExchange();
+        HttpStatus status = HttpStatus.resolve(responseEntity.statusCode());
+
+        if (Objects.requireNonNull(status).is2xxSuccessful()) {
+            AuthRSAPublicKey key = AuthRSAPublicKey.fromJsonString(responseEntity.body());
+            accessRSAPublicKey = UtilsBase.createRSAPublicKey(key.key());
         }
     }
 

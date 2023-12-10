@@ -33,7 +33,8 @@ import java.security.NoSuchAlgorithmException;
 
 public class FDispatcherClient extends AbstractClient implements DispatcherService<HttpResponse<String>> {
     private final SecureLogin secureLogin;
-    private String token;
+    private String authToken;
+    private String accessToken;
 
     public FDispatcherClient(URI uri, SSLContext sslContext, SSLParameters sslParameters) throws NoSuchAlgorithmException, KeyManagementException, NoSuchPaddingException, InvalidKeyException {
         super(uri, sslContext, sslParameters);
@@ -70,7 +71,15 @@ public class FDispatcherClient extends AbstractClient implements DispatcherServi
                 String jsonString = new String(plainData, StandardCharsets.UTF_8);
 
                 AuthenticatePasswordResponse pwdResp = AuthenticatePasswordResponse.fromJsonString(jsonString);
-                token = pwdResp.token();
+                authToken = pwdResp.token();
+
+                HttpResponse<String> accessControlToken = requestAccessControlToken(loginRequest.username());
+                HttpStatus httpStatus = HttpStatus.resolve(accessControlToken.statusCode());
+
+                if (httpStatus != null && httpStatus.is2xxSuccessful()) accessToken = accessControlToken.body();
+                System.out.println("Access Token: " + accessToken);
+                System.out.println("Auth Token: " + authToken);
+
             }
 
             return responseEntity;
@@ -79,6 +88,11 @@ public class FDispatcherClient extends AbstractClient implements DispatcherServi
                  BadPaddingException e) {
             return null;
         }
+    }
+
+    private HttpResponse<String> requestAccessControlToken(String username) throws IOException, InterruptedException {
+        HttpRequest request = RestRequest.getInstance(baseUri, true).get("/access/{username}", authToken, username);
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     @Override

@@ -1,7 +1,6 @@
 package com.server;
 
 import com.api.*;
-import com.api.auth.AuthenticationToken;
 import com.api.auth.SecureLogin;
 import com.api.common.shell.Shell;
 import com.api.common.shell.StorePasswords;
@@ -9,11 +8,13 @@ import com.api.requests.AuthRSAPublicKey;
 import com.api.requests.authenticate.*;
 import com.api.User;
 import com.api.services.AuthService;
+import com.api.utils.JwtTokenUtil;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,15 +23,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.crypto.NoSuchPaddingException;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-
 
 @SpringBootApplication
 @RestController
@@ -110,7 +108,7 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
         if (!users.get(loginRequest.username()).authenticate(Base64.getEncoder().encodeToString(hashedPWD)))
             return new RestResponse(HttpStatus.UNAUTHORIZED).buildResponse("Wrong password!");
 
-        String token = AuthenticationToken.createToken(loginRequest.username(), rsaDigitalSignature.getPrivateKey());
+        String token = JwtTokenUtil.createJwtToken(rsaDigitalSignature.getPrivateKey(), loginRequest.username(), "FAuth");
         String response = secureLogin.confirmSuccessfulLogin(token, loginRequest.secureRandom(), loginRequest.secureRandom());
 
         System.out.println("User " + loginRequest.username() + " authenticated successfully!");
@@ -126,21 +124,23 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
     private static void initializeUsersDB() {
         try {
             System.out.println("Reading of the file initialized.");
-            // Read the credentials file
-            BufferedReader reader = new BufferedReader(new FileReader("/home/martin/Documents/SRSC/SRSC_Projeto2/proj2/FServer/src/main/java/com/server/auth/credentials"));
+
+            // Load the auth.conf file using the ClassPathResource
+            ClassPathResource resource = new ClassPathResource("auth.conf");
+            InputStream inputStream = resource.getInputStream();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 
             // Parse each line and add users to the map
             String line;
-
             while ((line = reader.readLine()) != null) {
                 System.out.println("Line: " + line);
                 String[] parts = line.split(":");
                 if (parts.length == 5) {
-                    String username = parts[0];
-                    String email = parts[1];
-                    String name = parts[2];
-                    String passwordHash = hashPasswordSHA256(parts[3]);
-                    boolean canAuthenticate = Boolean.parseBoolean(parts[4]);
+                    String username = parts[0].trim();
+                    String email = parts[1].trim();
+                    String name = parts[2].trim();
+                    String passwordHash = hashPasswordSHA256(parts[3].trim());
+                    boolean canAuthenticate = Boolean.parseBoolean(parts[4].trim());
 
                     User user = new User(username, email, name, passwordHash, canAuthenticate);
                     users.put(username, user);
@@ -148,13 +148,16 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
             }
 
             System.out.println("Reading finished");
-            // Close the reader
+
+            // Close the resources
             reader.close();
+            inputStream.close();
+
         } catch (IOException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e.getMessage());
         }
-
     }
+
 
     /**
      * Returns hashed password
