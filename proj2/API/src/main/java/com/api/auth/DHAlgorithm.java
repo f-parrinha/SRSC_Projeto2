@@ -1,6 +1,4 @@
-package com.api;
-
-import com.api.common.UtilsDH;
+package com.api.auth;
 
 import javax.crypto.KeyAgreement;
 import java.security.*;
@@ -37,16 +35,6 @@ public class DHAlgorithm {
 
     }
 
-    public byte[] calculateKey(byte[] publicKeyBytes) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
-
-        KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
-        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
-        PublicKey serverPublicKey = keyFactory.generatePublic(keySpec);
-
-        Key key = keyAgreement.doPhase(serverPublicKey, false);
-
-        return key.getEncoded();
-    }
     public void calculateSharedKey(byte[] serverPublicKeyBytes) throws NoSuchAlgorithmException, InvalidKeyException, InvalidKeySpecException {
 
         KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
@@ -60,7 +48,6 @@ public class DHAlgorithm {
         // Then A generates the final agreement key
         sharedSecret = hash.digest(keyAgreement.generateSecret());
 
-        System.out.println("I generated: "+ UtilsDH.toHex(sharedSecret));
 
 
     }

@@ -11,14 +11,6 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Objects;
 
-import javax.crypto.KeyAgreement;
-import java.security.*;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.InvalidParameterSpecException;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
-
-
 /**
  * Abstract Class  FClient  creates a base client used by the different implementations
  *
@@ -44,7 +36,7 @@ public abstract class AbstractClient {
     }
 
     /**
-     * Creates a HTTPS client (TLS protocol) with custom SSL configurations
+     * Creates an HTTPS client (TLS protocol) with custom SSL configurations
      * @param sslContext custom SSLContext object to configure TLS communication
      * @param sslParameters custom SSLParameters object to configure TLS communication
      * @return HTTPS client with custom SSL configs

@@ -1,6 +1,11 @@
-package com.api.common;
+package com.api.utils;
 
-import java.util.Arrays;
+
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 
 /**
  * Classe auxiliar
@@ -100,5 +105,11 @@ public class UtilsBase
             value >>= 8;
         }
         return result;
+    }
+
+    public static PublicKey createRSAPublicKey(byte[] publicKeyBytes) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(publicKeyBytes);
+        return keyFactory.generatePublic(publicKeySpec);
     }
 }

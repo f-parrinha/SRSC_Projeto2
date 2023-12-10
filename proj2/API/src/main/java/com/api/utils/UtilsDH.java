@@ -1,4 +1,6 @@
-package com.api.common;
+package com.api.utils;
+
+import com.api.utils.Utils;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

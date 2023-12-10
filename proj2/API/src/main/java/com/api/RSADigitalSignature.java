@@ -1,6 +1,5 @@
 package com.api;
 
-import java.nio.charset.StandardCharsets;
 import java.security.*;
 
 public class RSADigitalSignature {
@@ -18,14 +17,11 @@ public class RSADigitalSignature {
         return keyPairGenerator.generateKeyPair();
     }
 
-    public byte[] signMessage(byte[] message) throws Exception {
-        Signature signature = Signature.getInstance("SHA256withRSA");
-        signature.initSign(keyPair.getPrivate());
-        signature.update(message);
-        return signature.sign();
-    }
-
     public byte[] getPublicKey() {
         return keyPair.getPublic().getEncoded();
+    }
+
+    public PrivateKey getPrivateKey() {
+        return keyPair.getPrivate();
     }
 }

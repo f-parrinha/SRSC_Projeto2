@@ -1,10 +1,16 @@
 package com.api.services;
 
 import com.api.requests.CopyRequest;
-import com.api.requests.LoginRequest;
 import com.api.requests.MkDirRequest;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.text.ParseException;
 
 /**
  * Interface  FServerService  describes the API for the FServer usage
@@ -15,12 +21,19 @@ import java.io.IOException;
 public interface DispatcherService<T> {
 
     /**
-     * Requests "login" command
+     * Requests key exchange to initiate login process
      *
-     * @param loginRequest the login request to be sent
+     * @param requestKeyExchange the request to be sent
      * @return Response (text)
      */
-    T login(LoginRequest loginRequest) throws IOException, InterruptedException;
+    T requestDHPublicKey(String requestKeyExchange) throws IOException, InterruptedException;
+
+    /**
+     * Requests "login" command
+     *
+     * @return Response (text)
+     */
+    T login(String request) throws IOException, InterruptedException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException, ParseException;
 
     /**
      * Requests "ls" command
@@ -44,7 +57,6 @@ public interface DispatcherService<T> {
      * Requests "mkdir" command
      *
      * @param username who is requesting
-     * @param path     where to create the new directory
      * @return Response (text)
      */
     T makeDirectory(String username, MkDirRequest mkDirRequest) throws IOException, InterruptedException;
@@ -73,10 +85,6 @@ public interface DispatcherService<T> {
      * Requests "cpy" command
      *
      * @param username   who is requesting
-     * @param sourcePath source of what to copy
-     * @param sourceFile file with the desired content
-     * @param destPath   where to create the new file
-     * @param destFile   the name of the new file
      * @return Response (text)
      */
     T copy(String username, CopyRequest copyRequest) throws IOException, InterruptedException;

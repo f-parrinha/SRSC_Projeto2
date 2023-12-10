@@ -29,7 +29,10 @@ public class LoginCommand extends ShellCommand implements Command {
         String username = input[1];
         String password = input[2];
 
-        var response = client.login(new LoginRequest(username, password));
+        LoginRequest request = new LoginRequest(username, password);
+        String stringRequest = request.serialize().toString();
+
+        var response = client.login(stringRequest);
         client.readResponse(response);
     }
 }

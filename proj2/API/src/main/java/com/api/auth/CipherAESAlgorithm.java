@@ -1,4 +1,4 @@
-package com.api;
+package com.api.auth;
 
 import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
@@ -42,6 +42,7 @@ public class CipherAESAlgorithm {
     public byte[] decryptData(byte[] data, byte[] secureRandom, byte[] sharedSecret) throws InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         initKeyCipher(sharedSecret);
         GCMParameterSpec gcmParameterSpec = createGcmIvForAes(secureRandom);
+
         cipher.init(Cipher.DECRYPT_MODE, keyCipher, gcmParameterSpec);
         return cipher.doFinal(data);
 

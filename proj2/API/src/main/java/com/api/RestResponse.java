@@ -55,7 +55,7 @@ public class RestResponse {
     public String statusToString(HttpStatus status, String content) {
         switch (Objects.requireNonNull(status)) {
             case OK -> {
-                return OK_MESSAGE + content;
+                return /*OK_MESSAGE + */content;
             }
             case NOT_FOUND -> {
                 return NOT_FOUND_MESSAGE;

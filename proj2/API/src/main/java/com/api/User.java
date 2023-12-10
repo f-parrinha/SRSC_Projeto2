@@ -1,4 +1,4 @@
-package com.server.auth;
+package com.api;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

@@ -8,14 +8,12 @@ import com.api.common.tls.TLSConfigFactory;
 import com.client.serviceClients.FDispatcherClient;
 import com.client.shell.commands.*;
 
+import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.security.cert.CertificateException;
 
 /**
@@ -37,7 +35,7 @@ public class ClientShell extends Shell {
 
 
     public static void main(String[] args) throws IOException, UnrecoverableKeyException, CertificateException,
-            NoSuchAlgorithmException, KeyStoreException, URISyntaxException, KeyManagementException, InterruptedException {
+            NoSuchAlgorithmException, KeyStoreException, URISyntaxException, KeyManagementException, InterruptedException, NoSuchPaddingException, InvalidKeyException {
         StorePasswords passwords = Shell.loadTrustKeyStoresPass();
         TLSClientConfig tls = TLSConfigFactory.getInstance().forClient()
                 .withConfigFile(CONFIG_PATH)

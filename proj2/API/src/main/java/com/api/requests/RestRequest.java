@@ -76,13 +76,31 @@ public class RestRequest<T> {
      * @param pathArgs args to the path variables
      * @return HttpRquest GET object
      */
-    public HttpRequest get(String url, String ... pathArgs) {
+    public HttpRequest get(String url) {
+        URI uri = baseUri.resolve(processPathArgs(url));
+        printDebugMessage(uri, Request.Type.GET);
+        return HttpRequest.newBuilder()
+                .uri(uri)
+                .header(HttpHeaders.ACCEPT, MEDIA_TYPE)
+                .header(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE)
+                .GET()
+                .build();
+    }
+
+    /**
+     * Sends a GET request
+     * @param url endpoint url
+     * @param pathArgs args to the path variables
+     * @return HttpRquest GET object
+     */
+    public HttpRequest get(String url, String token, String ... pathArgs) {
         URI uri = baseUri.resolve(processPathArgs(url, pathArgs));
         printDebugMessage(uri, Request.Type.GET);
         return HttpRequest.newBuilder()
                 .uri(uri)
                 .header(HttpHeaders.ACCEPT, MEDIA_TYPE)
                 .header(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE)
+                .header("Authorization", "Bearer " + token)
                 .GET()
                 .build();
     }

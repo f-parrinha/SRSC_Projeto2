@@ -1,13 +1,13 @@
 package com.server;
 
-import com.api.RestResponse;
+import com.api.*;
+import com.api.auth.AuthenticationToken;
+import com.api.utils.UtilsBase;
 import com.api.common.shell.Shell;
 import com.api.common.shell.StorePasswords;
 import com.api.common.tls.TLSClientConfig;
 import com.api.common.tls.TLSConfigFactory;
-import com.api.requests.CopyRequest;
-import com.api.requests.LoginRequest;
-import com.api.requests.MkDirRequest;
+import com.api.requests.*;
 import com.api.services.DispatcherService;
 import com.client.serviceClients.FAccessClient;
 import com.client.serviceClients.FAuthClient;
@@ -21,14 +21,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
+import java.net.http.HttpResponse;
+import java.security.*;
 import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
+
+import java.text.ParseException;
+import java.util.Objects;
 
 
 /**
@@ -41,35 +43,33 @@ import java.security.cert.CertificateException;
 @RestController
 public class FDispatcher extends FServer implements DispatcherService<ResponseEntity<String>> {
 
-    /** Constants */
+    /**
+     * Constants
+     */
     public static final int PORT = 8081;
     public static final String KEYSTORE_PATH = "classpath:fdispatcher-ks.jks";
     public static final String KEY_ALIAS = "fdispatcher";
     public static final String TRUSTSTORE_PATH = "classpath:fdispatcher-ts.jks";
     public static final InputStream KEYSTORE_FILE = FDispatcher.class.getClassLoader().getResourceAsStream("fdispatcher-ks.jks");
     public static final InputStream TRUSTSTORE_FILE = FDispatcher.class.getClassLoader().getResourceAsStream("fdispatcher-ts.jks");
-
-
-    /** Variables */
+    private static PublicKey authRSAPublicKey;
+    /**
+     * Variables
+     */
     private FStorageClient storageClient;
-    private FAuthClient authClient;
+    private static FAuthClient authClient;
     private FAccessClient accessClient;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, InterruptedException {
         SpringApplication.run(FDispatcher.class, args);
+        requestAuthRSAPublicKey();
     }
 
 
     @Bean
-    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> serverConfig() throws IOException, URISyntaxException, UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> serverConfig() throws IOException, UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, NoSuchPaddingException, InvalidKeyException, InvalidKeySpecException, InterruptedException {
         StorePasswords passwords = Shell.loadTrustKeyStoresPass();
-        TLSClientConfig tls = TLSConfigFactory.getInstance().forClient()
-                .withConfigFile(CLIENT_CONFIG_FILE)
-                .withKeyStoreFile(KEYSTORE_FILE)
-                .withKeyStorePass(passwords.keyStorePass())
-                .withTrustStoreFile(TRUSTSTORE_FILE)
-                .withTrustStorePass(passwords.trustStorePass())
-                .build();
+        TLSClientConfig tls = TLSConfigFactory.getInstance().forClient().withConfigFile(CLIENT_CONFIG_FILE).withKeyStoreFile(KEYSTORE_FILE).withKeyStorePass(passwords.keyStorePass()).withTrustStoreFile(TRUSTSTORE_FILE).withTrustStorePass(passwords.trustStorePass()).build();
 
         authClient = new FAuthClient(AUTH_URL, tls.getSslContext(), tls.getSslParameters());
         accessClient = new FAccessClient(ACCESS_URL, tls.getSslContext(), tls.getSslParameters());
@@ -77,10 +77,25 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
         return createWebServerFactory(PORT, KEYSTORE_PATH, KEY_ALIAS, TRUSTSTORE_PATH, passwords);
     }
 
+    @PostMapping("/init-connection")
+    @Override
+    public ResponseEntity<String> requestDHPublicKey(@RequestBody String stringRequest) throws IOException, InterruptedException {
+
+        HttpResponse<String> responseEntity = authClient.requestDHPublicKey(stringRequest);
+        HttpStatus status = HttpStatus.resolve(responseEntity.statusCode());
+
+        return new RestResponse(status).buildResponse(responseEntity.body());
+    }
+
     @PostMapping("/login")
     @Override
-    public ResponseEntity<String>  login(@RequestBody LoginRequest loginRequest) {
-        return ResponseEntity.ok("Login realizado com sucesso");
+    public ResponseEntity<String> login(@RequestBody String request) throws IOException, InterruptedException {
+
+        HttpResponse<String> responseEntity = authClient.authenticateUser(request);
+        HttpStatus status = HttpStatus.resolve(responseEntity.statusCode());
+
+        return new RestResponse(status).buildResponse(responseEntity.body());
+
     }
 
     @GetMapping("/ls/{username}")
@@ -105,13 +120,13 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @PostMapping("/put/{username}/{path}/{file}")
     @Override
-    public ResponseEntity<String>  put(@PathVariable String username, @PathVariable String path, @PathVariable String file) {
+    public ResponseEntity<String> put(@PathVariable String username, @PathVariable String path, @PathVariable String file) {
         return ResponseEntity.ok("Arquivo " + file + " enviado com sucesso para " + username + " no caminho " + path);
     }
 
     @GetMapping("/get/{username}/{path}/{file}")
     @Override
-    public ResponseEntity<String>  get(@PathVariable String username, @PathVariable String path, @PathVariable String file) throws IOException, InterruptedException {
+    public ResponseEntity<String> get(@PathVariable String username, @PathVariable String path, @PathVariable String file) throws IOException, InterruptedException {
         var storageResponse = storageClient.getFile(username, path, file);
         HttpStatus status = HttpStatus.resolve(storageResponse.statusCode());
         return new RestResponse(status).buildResponse(storageResponse.body());
@@ -119,20 +134,50 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @PostMapping("/cp/{username}")
     @Override
-    public ResponseEntity<String>  copy(@PathVariable String username, @RequestBody CopyRequest copyRequest) {
-        return ResponseEntity.ok("Arquivo " + copyRequest.sourceFile() + " copiado de " + copyRequest.sourcePath() +
-                " para " + copyRequest.destPath() + " com o nome " + copyRequest.destFile());
+    public ResponseEntity<String> copy(@PathVariable String username, @RequestBody CopyRequest copyRequest) {
+        return ResponseEntity.ok("Arquivo " + copyRequest.sourceFile() + " copiado de " + copyRequest.sourcePath() + " para " + copyRequest.destPath() + " com o nome " + copyRequest.destFile());
     }
 
     @DeleteMapping("/rm/{username}/{path}/{file}")
     @Override
-    public ResponseEntity<String>  remove(@PathVariable String username, @PathVariable String path, @PathVariable String file) {
+    public ResponseEntity<String> remove(@PathVariable String username, @PathVariable String path, @PathVariable String file) {
         return ResponseEntity.ok("Arquivo " + file + " removido com sucesso de " + username + " no caminho " + path);
     }
 
     @GetMapping("/file/{username}/{path}/{file}")
     @Override
-    public ResponseEntity<String>  file(@PathVariable String username, @PathVariable String path, @PathVariable String file) {
+    public ResponseEntity<String> file(@PathVariable String username, @PathVariable String path, @PathVariable String file) {
         return ResponseEntity.ok("Informações sobre o arquivo " + file + " para " + username + " no caminho " + path);
     }
+
+    @GetMapping("/checkToken")
+    public ResponseEntity<String> yourEndpoint(@RequestHeader("Authorization") String authorizationHeader) throws ParseException {
+        // Extract the token from the Authorization header
+        String token = AuthenticationToken.extractToken(authorizationHeader);
+        System.out.println("Token: " + token);
+        if (AuthenticationToken.verifyToken(token, authRSAPublicKey))
+            return ResponseEntity.ok("Request processed successfully");
+        // Process the token as needed
+        return new RestResponse(HttpStatus.UNAUTHORIZED).buildResponse("Invalid Token!");
+    }
+
+    /**
+     * Makes a request to the FAuth module, seeking to obtain the RSA Public Key in order to be able to verify
+     * tokens authenticity
+     *
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeySpecException
+     */
+    private static void requestAuthRSAPublicKey() throws IOException, InterruptedException, NoSuchAlgorithmException, InvalidKeySpecException {
+        HttpResponse<String> responseEntity = authClient.rsaPublicKeyExchange();
+        HttpStatus status = HttpStatus.resolve(responseEntity.statusCode());
+
+        if (Objects.requireNonNull(status).is2xxSuccessful()) {
+            AuthRSAPublicKey key = AuthRSAPublicKey.fromJsonString(responseEntity.body());
+            authRSAPublicKey = UtilsBase.createRSAPublicKey(key.key());
+        }
+    }
+
 }
