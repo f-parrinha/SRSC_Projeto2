@@ -1,6 +1,5 @@
 package com.client.shell.commands;
 
-import com.api.requests.LoginRequest;
 import com.client.serviceClients.FDispatcherClient;
 import com.api.common.shell.ShellPreconditions;
 
@@ -29,10 +28,7 @@ public class LoginCommand extends ShellCommand implements Command {
         String username = input[1];
         String password = input[2];
 
-        LoginRequest request = new LoginRequest(username, password);
-        String stringRequest = request.serialize().toString();
-
-        var response = client.login(stringRequest);
+        var response = client.login(username, password);
         client.readResponse(response);
     }
 }

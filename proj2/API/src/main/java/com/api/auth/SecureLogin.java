@@ -3,7 +3,7 @@ package com.api.auth;
 import com.api.utils.UtilsBase;
 import com.api.requests.authenticate.AuthenticatePasswordRequest;
 import com.api.requests.authenticate.AuthenticatePasswordResponse;
-import com.api.requests.authenticate.SuccessfullAuthenticationResponse;
+import com.api.requests.SingleDataRequest;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -19,25 +19,20 @@ public class SecureLogin {
     private static final short NONCE_SIZE = 16;
     private final DHAlgorithm dhAlgorithm;
     private final CipherAESAlgorithm cipherAESAlgorithm;
-    private final SecureRandom secureRandomGenerator;
     private byte[] secureRandom;
 
     public SecureLogin() throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException {
         dhAlgorithm = new DHAlgorithm();
         cipherAESAlgorithm = new CipherAESAlgorithm();
-        secureRandomGenerator = new SecureRandom();
     }
-
+    public byte[] getSecureRandom() {
+        return secureRandom;
+    }
     /**
      * @return
      */
-    public byte[] generateRandomBytes() {
-
-        byte[] random = new byte[NONCE_SIZE];
-        secureRandomGenerator.nextBytes(random);
-        secureRandom = random;
-
-        return random;
+    public void generateRandomBytes() {
+        secureRandom = UtilsBase.generateRandomBytes(NONCE_SIZE);
     }
 
     /**
@@ -58,7 +53,6 @@ public class SecureLogin {
     }
 
     /**
-     *
      * @param data
      * @return
      * @throws InvalidAlgorithmParameterException
@@ -71,19 +65,19 @@ public class SecureLogin {
     }
 
     /**
-     *  Generates the final request for authentication, in the form:
-     *  { H (PWD) || SecureRandom1+1 } Ks || username || SecureRandom2 || Assinatura de Ycliente
-     *  where:
-     *      - Ks is the DH shared secret between the client and the FAuth module
-     *      - SecureRandom are used to prevent reply attacks
+     * Generates the final request for authentication, in the form:
+     * { H (PWD) || SecureRandom1+1 } Ks || username || SecureRandom2 || Assinatura de Ycliente
+     * where:
+     * - Ks is the DH shared secret between the client and the FAuth module
+     * - SecureRandom are used to prevent reply attacks
      *
-     * @param pwd Client password
-     * @param username  Client username
-     * @param serversRandom Random
+     * @param pwd               Client password
+     * @param username          Client username
+     * @param serversRandom     Random
      * @param receivedPublicKey Client DH Public Key
      * @return Request
      */
-    public AuthenticatePasswordRequest formLoginRequest(String pwd, String username, byte[] serversRandom, byte[] receivedPublicKey) throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+    public AuthenticatePasswordRequest formLoginRequest(String pwd, byte[] serversRandom, byte[] receivedPublicKey) throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
 
         try {
             generateDHSharedSecret(receivedPublicKey);
@@ -94,7 +88,7 @@ public class SecureLogin {
             byte[] data = concatArrays(hashedPWD, incrementedRandom);
             byte[] encryptedPayload = cipherAESAlgorithm.encryptHashedData(data, dhAlgorithm.getSharedSecret(), secureRandom);
 
-            return new AuthenticatePasswordRequest(encryptedPayload, username, secureRandom, getDHPublicKey());
+            return new AuthenticatePasswordRequest(encryptedPayload, secureRandom, getDHPublicKey());
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new RuntimeException(e);
         }
@@ -126,7 +120,6 @@ public class SecureLogin {
     }
 
     /**
-     *
      * @param token
      * @param secret
      * @param secureRandom
@@ -145,7 +138,7 @@ public class SecureLogin {
 
         byte[] cipheredResponse = cipherAESAlgorithm.encryptHashedData(response.serialize().toString().getBytes(), dhAlgorithm.getSharedSecret(), secret);
 
-        return new SuccessfullAuthenticationResponse(cipheredResponse).serialize().toString();
+        return new SingleDataRequest(cipheredResponse).serialize().toString();
 
     }
 

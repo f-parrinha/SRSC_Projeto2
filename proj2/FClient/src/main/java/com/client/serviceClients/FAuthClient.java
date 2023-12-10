@@ -2,7 +2,6 @@ package com.client.serviceClients;
 
 import com.api.requests.authenticate.AuthenticatePasswordRequest;
 import com.api.requests.RestRequest;
-import com.api.requests.authenticate.RequestKeyExchange;
 import com.api.services.AuthService;
 import com.client.AbstractClient;
 
@@ -25,20 +24,17 @@ public class FAuthClient extends AbstractClient implements AuthService<HttpRespo
         return client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
     }
     @Override
-    public HttpResponse<String> requestDHPublicKey(String request) throws IOException, InterruptedException {
-        RequestKeyExchange req = RequestKeyExchange.fromJsonString(request);
-
-        JsonObject requestKeyExchangeJson = req.serialize();
-        HttpRequest httpRequest = RestRequest.getInstance(baseUri).post("/init-connection-auth", requestKeyExchangeJson);
+    public HttpResponse<String> requestDHPublicKey(String username) throws IOException, InterruptedException {
+        HttpRequest httpRequest = RestRequest.getInstance(baseUri).get("/auth/init-connection/{username}", "", username);
         return client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
     }
 
     @Override
-    public HttpResponse<String> authenticateUser(String loginRequest) throws IOException, InterruptedException {
+    public HttpResponse<String> authenticateUser(String loginRequest, String username) throws IOException, InterruptedException {
         AuthenticatePasswordRequest req = AuthenticatePasswordRequest.fromJsonString(loginRequest);
-
         JsonObject requestKeyExchangeJson = req.serialize();
-        HttpRequest httpRequest = RestRequest.getInstance(baseUri).post("/authenticate", requestKeyExchangeJson);
+
+        HttpRequest httpRequest = RestRequest.getInstance(baseUri).post("/auth/login/{username}", requestKeyExchangeJson, username);
         return client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
     }
 

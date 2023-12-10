@@ -6,19 +6,20 @@ import javax.json.JsonObjectBuilder;
 import java.io.StringReader;
 import java.util.Base64;
 
-public record AuthRSAPublicKey(byte[] key) {
+public record SingleDataRequest(byte[] data) implements Request<SingleDataRequest>{
 
+    @Override
     public JsonObject serialize() {
         JsonObjectBuilder builder = Json.createObjectBuilder()
-                .add("key", Base64.getEncoder().encodeToString(key));
+                .add("data", Base64.getEncoder().encodeToString(data));
 
         return builder.build();
     }
 
-    public static AuthRSAPublicKey fromJsonString(String jsonString) {
+    public static SingleDataRequest fromJsonString(String jsonString) {
         JsonObject jsonObject = Json.createReader(new StringReader(jsonString)).readObject();
-        return new AuthRSAPublicKey(
-                Base64.getDecoder().decode(jsonObject.getString("key"))
+        return new SingleDataRequest(
+                Base64.getDecoder().decode(jsonObject.getString("data"))
         );
     }
 }

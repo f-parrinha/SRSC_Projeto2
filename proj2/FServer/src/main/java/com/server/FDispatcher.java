@@ -1,6 +1,7 @@
 package com.server;
 
 import com.api.*;
+import com.api.requests.SingleDataRequest;
 import com.api.utils.JwtTokenUtil;
 import com.api.utils.UtilsBase;
 import com.api.common.shell.Shell;
@@ -51,6 +52,7 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
     public static final String TRUSTSTORE_PATH = "classpath:fdispatcher-ts.jks";
     public static final InputStream KEYSTORE_FILE = FDispatcher.class.getClassLoader().getResourceAsStream("fdispatcher-ks.jks");
     public static final InputStream TRUSTSTORE_FILE = FDispatcher.class.getClassLoader().getResourceAsStream("fdispatcher-ts.jks");
+    public static final String SIGNATURE_ALGORITHM = "RSA";
     private static PublicKey authRSAPublicKey;
     private static PublicKey accessRSAPublicKey;
     /**
@@ -77,21 +79,21 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
         return createWebServerFactory(PORT, KEYSTORE_PATH, KEY_ALIAS, TRUSTSTORE_PATH, passwords);
     }
 
-    @PostMapping("/init-connection")
+    @GetMapping("/init-connection/{username}")
     @Override
-    public ResponseEntity<String> requestDHPublicKey(@RequestBody String stringRequest) throws IOException, InterruptedException {
+    public ResponseEntity<String> requestDHPublicKey(@PathVariable String username) throws IOException, InterruptedException {
 
-        HttpResponse<String> responseEntity = authClient.requestDHPublicKey(stringRequest);
+        HttpResponse<String> responseEntity = authClient.requestDHPublicKey(username);
         HttpStatus status = HttpStatus.resolve(responseEntity.statusCode());
 
         return new RestResponse(status).buildResponse(responseEntity.body());
     }
 
-    @PostMapping("/login")
+    @PostMapping("/login/{username}")
     @Override
-    public ResponseEntity<String> login(@RequestBody String request) throws IOException, InterruptedException {
+    public ResponseEntity<String> login(@RequestBody String request, @PathVariable String username) throws IOException, InterruptedException {
 
-        HttpResponse<String> responseEntity = authClient.authenticateUser(request);
+        HttpResponse<String> responseEntity = authClient.authenticateUser(request, username);
         HttpStatus status = HttpStatus.resolve(responseEntity.statusCode());
 
         return new RestResponse(status).buildResponse(responseEntity.body());
@@ -182,8 +184,8 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
         HttpStatus status = HttpStatus.resolve(responseEntity.statusCode());
 
         if (Objects.requireNonNull(status).is2xxSuccessful()) {
-            AuthRSAPublicKey key = AuthRSAPublicKey.fromJsonString(responseEntity.body());
-            authRSAPublicKey = UtilsBase.createRSAPublicKey(key.key());
+            SingleDataRequest key = SingleDataRequest.fromJsonString(responseEntity.body());
+            authRSAPublicKey = UtilsBase.createPublicKey(key.data(), SIGNATURE_ALGORITHM);
         }
     }
 
@@ -201,8 +203,8 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
         HttpStatus status = HttpStatus.resolve(responseEntity.statusCode());
 
         if (Objects.requireNonNull(status).is2xxSuccessful()) {
-            AuthRSAPublicKey key = AuthRSAPublicKey.fromJsonString(responseEntity.body());
-            accessRSAPublicKey = UtilsBase.createRSAPublicKey(key.key());
+            SingleDataRequest key = SingleDataRequest.fromJsonString(responseEntity.body());
+            accessRSAPublicKey = UtilsBase.createPublicKey(key.data(), SIGNATURE_ALGORITHM);
         }
     }
 

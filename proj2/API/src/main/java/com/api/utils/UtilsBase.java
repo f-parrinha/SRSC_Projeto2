@@ -1,9 +1,6 @@
 package com.api.utils;
 
-
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 
@@ -80,13 +77,10 @@ public class UtilsBase
     }
 
     public static byte[] incrementByteArray(byte[] inputBytes) {
-        // Convert byte array to a numeric value
-        long numericValue = UtilsBase.bytesToLong(inputBytes);
 
-        // Increment the numeric value
+        long numericValue = UtilsBase.bytesToLong(inputBytes);
         numericValue++;
 
-        // Convert the incremented numeric value back to a byte array
         return UtilsBase.longToBytes(numericValue, inputBytes.length);
     }
 
@@ -107,9 +101,23 @@ public class UtilsBase
         return result;
     }
 
-    public static PublicKey createRSAPublicKey(byte[] publicKeyBytes) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+    public static PublicKey createPublicKey(byte[] publicKeyBytes, String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        KeyFactory keyFactory = KeyFactory.getInstance(algorithm);
         X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(publicKeyBytes);
         return keyFactory.generatePublic(publicKeySpec);
+    }
+
+    public static KeyPair generateKeyPair(String algorithm, int keySize) throws NoSuchAlgorithmException {
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(algorithm);
+        keyPairGenerator.initialize(keySize); // Adjust the key size based on your security requirements
+        return keyPairGenerator.generateKeyPair();
+    }
+
+    public static byte[] generateRandomBytes(int size) {
+        SecureRandom secureRandomGenerator = new SecureRandom();
+        byte[] random = new byte[size];
+        secureRandomGenerator.nextBytes(random);
+
+        return random;
     }
 }

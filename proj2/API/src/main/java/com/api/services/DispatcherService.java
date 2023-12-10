@@ -33,7 +33,7 @@ public interface DispatcherService<T> {
      *
      * @return Response (text)
      */
-    T login(String request) throws IOException, InterruptedException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException, ParseException;
+    T login(String arg1, String arg2) throws IOException, InterruptedException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException, ParseException;
 
     /**
      * Requests "ls" command

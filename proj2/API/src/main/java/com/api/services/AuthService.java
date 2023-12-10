@@ -17,7 +17,7 @@ public interface AuthService<T> {
      * @param request
      * @return
      */
-    T requestDHPublicKey(@RequestBody String request) throws IOException, InterruptedException;
+    T requestDHPublicKey(String request) throws IOException, InterruptedException;
 
     /**
      *
@@ -25,7 +25,7 @@ public interface AuthService<T> {
      * @return
      * @throws Exception
      */
-    T authenticateUser(@RequestBody String stringLoginRequest) throws Exception;
+    T authenticateUser(String stringLoginRequest, String username) throws Exception;
 
 
 }

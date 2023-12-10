@@ -1,5 +1,8 @@
 package com.api.access;
 
+/**
+ *
+ */
 public enum PermissionsType {
     ALLOW_READ_WRITE("allow read write"),
     ALLOW_READ("allow read"),
@@ -24,10 +27,18 @@ public enum PermissionsType {
         throw new IllegalArgumentException("Invalid access level: " + value);
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean canRead() {
         return this == ALLOW_READ || this == ALLOW_READ_WRITE;
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean canWrite() {
         return this == ALLOW_READ_WRITE;
     }

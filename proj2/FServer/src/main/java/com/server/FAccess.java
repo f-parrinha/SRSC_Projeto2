@@ -1,13 +1,13 @@
 package com.server;
 
-import com.api.RSADigitalSignature;
 import com.api.RestResponse;
 import com.api.access.PermissionsType;
 import com.api.common.shell.Shell;
 import com.api.common.shell.StorePasswords;
-import com.api.requests.AuthRSAPublicKey;
+import com.api.requests.SingleDataRequest;
 import com.api.services.AccessService;
 import com.api.utils.JwtTokenUtil;
+import com.api.utils.UtilsBase;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
@@ -25,6 +25,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +41,10 @@ public class FAccess extends FServer implements AccessService<ResponseEntity<Str
     public static final String KEYSTORE_PATH = "classpath:faccess-ks.jks";
     public static final String KEY_ALIAS = "faccess";
     public static final String TRUSTSTORE_PATH = "classpath:faccess-ts.jks";
-    private RSADigitalSignature rsaDigitalSignature;
+    private static final int KEY_SIZE = 2048;
+    private static final String SIGNATURE_ALGORITHM = "RSA";
+
+    private KeyPair rsaKeyPair;
     private static Map<String, PermissionsType> accessControlMap;
 
     public static void main(String[] args) {
@@ -52,7 +56,7 @@ public class FAccess extends FServer implements AccessService<ResponseEntity<Str
     public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> serverConfig() throws NoSuchAlgorithmException {
         StorePasswords passwords = Shell.loadTrustKeyStoresPass();
         accessControlMap = new HashMap<>();
-        rsaDigitalSignature = new RSADigitalSignature();
+        rsaKeyPair = UtilsBase.generateKeyPair(SIGNATURE_ALGORITHM, KEY_SIZE);
 
         return createWebServerFactory(PORT, KEYSTORE_PATH, KEY_ALIAS, TRUSTSTORE_PATH, passwords);
     }
@@ -68,7 +72,7 @@ public class FAccess extends FServer implements AccessService<ResponseEntity<Str
             System.out.println("Wrong permissions...aborting!");
             return new RestResponse(HttpStatus.NOT_FOUND).buildResponse("Wrong permissions!");
         }
-        String token = JwtTokenUtil.createJwtToken(rsaDigitalSignature.getPrivateKey(), username, "FAccess", type.getValue());
+        String token = JwtTokenUtil.createJwtToken(rsaKeyPair.getPrivate(), username, "FAccess", type.getValue());
         System.out.println("Token generated successfully: " + token);
         return new RestResponse(HttpStatus.OK).buildResponse(token);
     }
@@ -76,7 +80,7 @@ public class FAccess extends FServer implements AccessService<ResponseEntity<Str
     @GetMapping("/access/RSAKeyExchange")
     @Override
     public ResponseEntity<String> rsaPublicKeyExchange() {
-        AuthRSAPublicKey key = new AuthRSAPublicKey(rsaDigitalSignature.getPublicKey());
+        SingleDataRequest key = new SingleDataRequest(rsaKeyPair.getPublic().getEncoded());
         return new RestResponse(HttpStatus.OK).buildResponse(key.serialize().toString());
     }
 

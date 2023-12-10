@@ -1,10 +1,10 @@
 package com.api.auth;
 
+import com.api.utils.UtilsBase;
+
 import javax.crypto.KeyAgreement;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
-
 
 public class DHAlgorithm {
     private static final String ALGORITHM = "DH";
@@ -19,36 +19,45 @@ public class DHAlgorithm {
         generateDHKeys2();
     }
 
+    /**
+     * @return
+     */
     public byte[] getPublicKey() {
         return dhKeyPair.getPublic().getEncoded();
     }
-    public byte[] getSharedSecret(){
+
+    /**
+     * @return
+     */
+    public byte[] getSharedSecret() {
         return sharedSecret;
     }
+
+    /**
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeyException
+     */
     private void generateDHKeys2() throws NoSuchAlgorithmException, InvalidKeyException {
-        KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance(ALGORITHM);
-        keyGenerator.initialize(KEY_SIZE);
-        KeyPair kPair = keyGenerator.generateKeyPair();
+        KeyPair kPair = UtilsBase.generateKeyPair(ALGORITHM, KEY_SIZE);
         keyAgreement.init(kPair.getPrivate());
 
         dhKeyPair = kPair;
 
     }
 
+    /**
+     * @param serverPublicKeyBytes
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeyException
+     * @throws InvalidKeySpecException
+     */
     public void calculateSharedKey(byte[] serverPublicKeyBytes) throws NoSuchAlgorithmException, InvalidKeyException, InvalidKeySpecException {
 
-        KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
-        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(serverPublicKeyBytes);
-        PublicKey serverPublicKey = keyFactory.generatePublic(keySpec);
-
+        PublicKey serverPublicKey = UtilsBase.createPublicKey(serverPublicKeyBytes, ALGORITHM);
         keyAgreement.doPhase(serverPublicKey, true);
 
         MessageDigest hash = MessageDigest.getInstance(HASH_ALGORITHM);
-
-        // Then A generates the final agreement key
         sharedSecret = hash.digest(keyAgreement.generateSecret());
-
-
 
     }
 

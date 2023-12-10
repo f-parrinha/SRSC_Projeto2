@@ -33,8 +33,8 @@ import java.security.NoSuchAlgorithmException;
 
 public class FDispatcherClient extends AbstractClient implements DispatcherService<HttpResponse<String>> {
     private final SecureLogin secureLogin;
-    private String authToken;
-    private String accessToken;
+    private String authToken = "";
+    private String accessToken = "";
 
     public FDispatcherClient(URI uri, SSLContext sslContext, SSLParameters sslParameters) throws NoSuchAlgorithmException, KeyManagementException, NoSuchPaddingException, InvalidKeyException {
         super(uri, sslContext, sslParameters);
@@ -42,11 +42,9 @@ public class FDispatcherClient extends AbstractClient implements DispatcherServi
     }
 
     @Override
-    public HttpResponse<String> login(String stringRequest) throws IOException, InterruptedException {
+    public HttpResponse<String> login(String username, String password) throws IOException, InterruptedException {
 
-        LoginRequest loginReq = LoginRequest.fromJsonString(stringRequest);
-
-        HttpResponse<String> responseEntity = requestDHPublicKey(loginReq.username());
+        HttpResponse<String> responseEntity = requestDHPublicKey(username);
         HttpStatus status = HttpStatus.resolve(responseEntity.statusCode());
 
         if (status == null || !status.is2xxSuccessful())
@@ -56,29 +54,26 @@ public class FDispatcherClient extends AbstractClient implements DispatcherServi
 
         try {
 
-            AuthenticatePasswordRequest loginRequest = secureLogin.formLoginRequest(loginReq.password(), loginReq.username(), response.secureRandom(), response.publicKey());
-
+            AuthenticatePasswordRequest loginRequest = secureLogin.formLoginRequest(password, response.secureRandom(), response.publicKey());
             JsonObject loginJson = loginRequest.serialize();
-            HttpRequest request = RestRequest.getInstance(baseUri).post("/login", loginJson);
 
+            HttpRequest request = RestRequest.getInstance(baseUri).post("/login/{username}", loginJson, username);
             responseEntity = client.send(request, HttpResponse.BodyHandlers.ofString());
             status = HttpStatus.resolve(responseEntity.statusCode());
 
             if (status != null && status.is2xxSuccessful()) {
-                SuccessfullAuthenticationResponse resp = SuccessfullAuthenticationResponse.fromJsonString(responseEntity.body());
+                SingleDataRequest resp = SingleDataRequest.fromJsonString(responseEntity.body());
 
-                byte[] plainData = secureLogin.decryptData(resp.encryptedData());
+                byte[] plainData = secureLogin.decryptData(resp.data());
                 String jsonString = new String(plainData, StandardCharsets.UTF_8);
 
                 AuthenticatePasswordResponse pwdResp = AuthenticatePasswordResponse.fromJsonString(jsonString);
                 authToken = pwdResp.token();
 
-                HttpResponse<String> accessControlToken = requestAccessControlToken(loginRequest.username());
+                HttpResponse<String> accessControlToken = requestAccessControlToken(username);
                 HttpStatus httpStatus = HttpStatus.resolve(accessControlToken.statusCode());
 
                 if (httpStatus != null && httpStatus.is2xxSuccessful()) accessToken = accessControlToken.body();
-                System.out.println("Access Token: " + accessToken);
-                System.out.println("Auth Token: " + authToken);
 
             }
 
@@ -97,9 +92,7 @@ public class FDispatcherClient extends AbstractClient implements DispatcherServi
 
     @Override
     public HttpResponse<String> requestDHPublicKey(String username) throws IOException, InterruptedException {
-        RequestKeyExchange requestKeyExchange = new RequestKeyExchange(username);
-        JsonObject requestKeyExchangeJson = requestKeyExchange.serialize();
-        HttpRequest request = RestRequest.getInstance(baseUri).post("/init-connection", requestKeyExchangeJson);
+        HttpRequest request = RestRequest.getInstance(baseUri).get("/init-connection/{username}", "", username);
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 

@@ -8,13 +8,13 @@ import javax.json.JsonObjectBuilder;
 import java.io.StringReader;
 import java.util.Base64;
 
-public record AuthenticatePasswordRequest(byte[] cipheredData, String username, byte[] secureRandom, byte[] publicKey)
+public record AuthenticatePasswordRequest(byte[] cipheredData, byte[] secureRandom, byte[] publicKey)
         implements Request<AuthenticatePasswordRequest> {
 
+    @Override
     public JsonObject serialize() {
         JsonObjectBuilder builder = Json.createObjectBuilder()
                 .add("cipheredData", Base64.getEncoder().encodeToString(cipheredData))
-                .add("username", username)
                 .add("secureRandom", Base64.getEncoder().encodeToString(secureRandom))
                 .add("publicKey", Base64.getEncoder().encodeToString(publicKey));
 
@@ -25,7 +25,6 @@ public record AuthenticatePasswordRequest(byte[] cipheredData, String username, 
         JsonObject jsonObject = Json.createReader(new StringReader(jsonString)).readObject();
         return new AuthenticatePasswordRequest(
                 Base64.getDecoder().decode(jsonObject.getString("cipheredData")),
-                jsonObject.getString("username"),
                 Base64.getDecoder().decode(jsonObject.getString("secureRandom")),
                 Base64.getDecoder().decode(jsonObject.getString("publicKey"))
         );

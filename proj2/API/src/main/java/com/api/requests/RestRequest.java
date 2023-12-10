@@ -22,7 +22,7 @@ public class RestRequest<T> {
     public static final String ARGS_SIZE_VARS_MISMATCH_ERROR = "Warning. Args size and the number of variables are different.";
 
     public static final String MEDIA_TYPE = "application/json";
-    private final URI baseUri;
+    private URI baseUri;
 
     /** Variables */
     private static RestRequest<?> request;
@@ -44,9 +44,15 @@ public class RestRequest<T> {
      * @return RestRequest singleton
      */
     public static RestRequest<?> getInstance(URI baseUri) {
-        request = new RestRequest<>(baseUri);
+        if(request == null)
+            request = new RestRequest<>(baseUri);
+        request.setUri(baseUri);
         request.setDebugOn(false);
         return request;
+    }
+
+    private void setUri(URI baseUri) {
+        this.baseUri = baseUri;
     }
 
     /**
@@ -55,7 +61,9 @@ public class RestRequest<T> {
      * @return RestRequest singleton
      */
     public static RestRequest<?> getInstance(URI baseUri, boolean debugOn) {
-        request =  new RestRequest<>(baseUri, debugOn);
+        if(request == null)
+            request = new RestRequest<>(baseUri);
+        request.setUri(baseUri);
         request.setDebugOn(debugOn);
         return request;
     }
@@ -77,10 +85,7 @@ public class RestRequest<T> {
      * @return HttpRquest GET object
      */
     public HttpRequest get(String url) {
-        System.out.println("URL: " + url);
-        System.out.println("Base uri: " + baseUri);
         URI uri = baseUri.resolve(processPathArgs(url));
-        System.out.println("Resolved uri: " + uri);
         printDebugMessage(uri, Request.Type.GET);
         return HttpRequest.newBuilder()
                 .uri(uri)

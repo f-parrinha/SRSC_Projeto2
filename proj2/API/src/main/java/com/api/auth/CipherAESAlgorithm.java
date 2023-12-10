@@ -31,6 +31,7 @@ public class CipherAESAlgorithm {
     private void initKeyCipher(byte[] sharedSecret) {
         keyCipher = new SecretKeySpec(sharedSecret, AES);
     }
+
     public byte[] encryptHashedData(byte[] hashedData, byte[] sharedSecret, byte[] secureRandom2) throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
         initKeyCipher(sharedSecret);
         GCMParameterSpec gcmParameterSpec = createGcmIvForAes(secureRandom2);
@@ -51,7 +52,6 @@ public class CipherAESAlgorithm {
     public byte[] hashData(byte[] data) {
         return hash.digest(data);
     }
-
 
 
 }

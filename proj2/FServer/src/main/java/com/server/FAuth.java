@@ -4,11 +4,12 @@ import com.api.*;
 import com.api.auth.SecureLogin;
 import com.api.common.shell.Shell;
 import com.api.common.shell.StorePasswords;
-import com.api.requests.AuthRSAPublicKey;
+import com.api.requests.SingleDataRequest;
 import com.api.requests.authenticate.*;
 import com.api.User;
 import com.api.services.AuthService;
 import com.api.utils.JwtTokenUtil;
+import com.api.utils.UtilsBase;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
@@ -17,15 +18,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -41,7 +40,9 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
     public static final String KEYSTORE_PATH = "classpath:fauth-ks.jks";
     public static final String KEY_ALIAS = "fauth";
     public static final String TRUSTSTORE_PATH = "classpath:fauth-ts.jks";
-    private RSADigitalSignature rsaDigitalSignature;
+    private static final int KEY_SIZE = 2048;
+    private static final String SIGNATURE_ALGORITHM = "RSA";
+    private KeyPair rsaKeyPair;
     private static Map<String, User> users;
     private static Map<String, SecureLogin> usersInLoginProcess;
 
@@ -55,7 +56,7 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
         StorePasswords passwords = Shell.loadTrustKeyStoresPass();
         users = new HashMap<>();
         usersInLoginProcess = new HashMap<>();
-        rsaDigitalSignature = new RSADigitalSignature();
+        rsaKeyPair = UtilsBase.generateKeyPair(SIGNATURE_ALGORITHM, KEY_SIZE);
 
         return createWebServerFactory(PORT, KEYSTORE_PATH, KEY_ALIAS, TRUSTSTORE_PATH, passwords);
     }
@@ -63,16 +64,13 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
     @Override
     @GetMapping("/request-RSA-Key")
     public ResponseEntity<String> rsaPublicKeyExchange() {
-        AuthRSAPublicKey key = new AuthRSAPublicKey(rsaDigitalSignature.getPublicKey());
+        SingleDataRequest key = new SingleDataRequest(rsaKeyPair.getPublic().getEncoded());
         return new RestResponse(HttpStatus.OK).buildResponse(key.serialize().toString());
     }
 
-    @PostMapping("/init-connection-auth")
+    @GetMapping("/auth/init-connection/{username}")
     @Override
-    public ResponseEntity<String> requestDHPublicKey(@RequestBody String request) {
-
-        RequestKeyExchange clientRequest = RequestKeyExchange.fromJsonString(request);
-        String username = clientRequest.username();
+    public ResponseEntity<String> requestDHPublicKey(@PathVariable String username) {
 
         System.out.println(username + " started authentication process...");
 
@@ -81,9 +79,9 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
 
         try {
             SecureLogin secureLogin = new SecureLogin();
-            byte[] secureRandom = secureLogin.generateRandomBytes();
+            secureLogin.generateRandomBytes();
 
-            AuthenticateUsernameResponse response = new AuthenticateUsernameResponse(secureRandom, secureLogin.getDHPublicKey());
+            AuthenticateUsernameResponse response = new AuthenticateUsernameResponse(secureLogin.getSecureRandom(), secureLogin.getDHPublicKey());
             usersInLoginProcess.put(username, secureLogin);
 
             return new RestResponse(HttpStatus.OK).buildResponse(response.serialize().toString());
@@ -93,26 +91,26 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
         }
     }
 
-    @PostMapping("/authenticate")
+    @PostMapping("/auth/login/{username}")
     @Override
-    public ResponseEntity<String> authenticateUser(@RequestBody String stringLoginRequest) throws Exception {
+    public ResponseEntity<String> authenticateUser(@RequestBody String stringLoginRequest, @PathVariable String username) throws Exception {
 
         AuthenticatePasswordRequest loginRequest = AuthenticatePasswordRequest.fromJsonString(stringLoginRequest);
-        SecureLogin secureLogin = usersInLoginProcess.get(loginRequest.username());
+        SecureLogin secureLogin = usersInLoginProcess.get(username);
 
         byte[] hashedPWD = secureLogin.receiveLoginRequest(loginRequest);
 
         if (hashedPWD == null)
             return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("ATTENTION! Possible replay attack detected!");
 
-        if (!users.get(loginRequest.username()).authenticate(Base64.getEncoder().encodeToString(hashedPWD)))
+        if (!users.get(username).authenticate(Base64.getEncoder().encodeToString(hashedPWD)))
             return new RestResponse(HttpStatus.UNAUTHORIZED).buildResponse("Wrong password!");
 
-        String token = JwtTokenUtil.createJwtToken(rsaDigitalSignature.getPrivateKey(), loginRequest.username(), "FAuth");
+        String token = JwtTokenUtil.createJwtToken(rsaKeyPair.getPrivate(), username, "FAuth");
         String response = secureLogin.confirmSuccessfulLogin(token, loginRequest.secureRandom(), loginRequest.secureRandom());
 
-        System.out.println("User " + loginRequest.username() + " authenticated successfully!");
-        usersInLoginProcess.remove(loginRequest.username());
+        System.out.println("User " + username + " authenticated successfully!");
+        usersInLoginProcess.remove(username);
 
         return new RestResponse(HttpStatus.OK).buildResponse(response);
 
