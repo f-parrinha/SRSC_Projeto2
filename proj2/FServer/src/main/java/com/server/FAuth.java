@@ -6,11 +6,14 @@ import com.api.common.shell.Shell;
 import com.api.common.shell.StorePasswords;
 import com.api.rest.requests.SingleDataRequest;
 import com.api.rest.requests.authenticate.*;
+import com.api.rest.RestResponse;
+import com.api.rest.requests.authenticate.*;
 import com.api.User;
 import com.api.services.AuthService;
 import com.api.services.AuthService;
 import com.api.utils.JwtTokenUtil;
 import com.api.utils.UtilsBase;
+import com.client.shell.ClientShell;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
@@ -32,6 +35,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
+
 @SpringBootApplication
 @RestController
 public class FAuth extends FServer implements AuthService<ResponseEntity<String>> {
@@ -49,6 +53,7 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
     private static Map<String, SecureLogin> usersInLoginProcess;
 
     public static void main(String[] args) {
+        FAuth.args = args;
         SpringApplication.run(FAuth.class, args);
         initializeUsersDB();
     }
@@ -58,7 +63,12 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
         StorePasswords passwords = Shell.loadTrustKeyStoresPass(args);
         users = new HashMap<>();
         usersInLoginProcess = new HashMap<>();
-        rsaKeyPair = UtilsBase.generateKeyPair(SIGNATURE_ALGORITHM, KEY_SIZE);
+
+        try {
+            rsaKeyPair = UtilsBase.generateKeyPair(SIGNATURE_ALGORITHM, KEY_SIZE);
+        } catch (NoSuchAlgorithmException e) {
+            Shell.printError("Incorrect algorithm for RSA digital signature.");
+        }
 
         return createWebServerFactory(PORT, KEYSTORE_PATH, KEY_ALIAS, TRUSTSTORE_PATH, passwords);
     }
@@ -86,11 +96,7 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
             AuthenticateUsernameResponse response = new AuthenticateUsernameResponse(secureLogin.getSecureRandom(), secureLogin.getDHPublicKey());
             usersInLoginProcess.put(username, secureLogin);
 
-            return new RestResponse(HttpStatus.OK).buildResponse(response.serialize().toString());
-
-        } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException e) {
-            return new RestResponse(HttpStatus.INTERNAL_SERVER_ERROR).buildResponse(e.toString());
-        }
+        return new RestResponse(HttpStatus.OK).buildResponse(response.serialize().toString());
     }
 
     @PostMapping("/auth/login/{username}")
@@ -103,7 +109,7 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
         byte[] hashedPWD = secureLogin.receiveLoginRequest(loginRequest);
 
         if (hashedPWD == null)
-            return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("ATTENTION! Possible replay attack detected!");
+            return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("WARNING! Possible replay attack detected.");
 
         if (!users.get(username).authenticate(Base64.getEncoder().encodeToString(hashedPWD)))
             return new RestResponse(HttpStatus.UNAUTHORIZED).buildResponse("Wrong password!");
@@ -111,8 +117,8 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
         String token = JwtTokenUtil.createJwtToken(rsaKeyPair.getPrivate(), username, "FAuth");
         String response = secureLogin.confirmSuccessfulLogin(token, loginRequest.secureRandom(), loginRequest.secureRandom());
 
-        System.out.println("User " + username + " authenticated successfully!");
-        usersInLoginProcess.remove(username);
+        Shell.printDebug("User " + loginRequest.username() + " authenticated successfully.");
+        usersInLoginProcess.remove(loginRequest.username());
 
         return new RestResponse(HttpStatus.OK).buildResponse(response);
 
@@ -129,11 +135,13 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
             ClassPathResource resource = new ClassPathResource("auth.conf");
             InputStream inputStream = resource.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            Shell.printDebug("Reading of the file initialized.");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(FAuth.class.getClassLoader().getResourceAsStream("credentials.data"))));
 
             // Parse each line and add users to the map
             String line;
             while ((line = reader.readLine()) != null) {
-                System.out.println("Line: " + line);
+                Shell.printDebug("Line: " + line);
                 String[] parts = line.split(":");
                 if (parts.length == 5) {
                     String username = parts[0].trim();
@@ -150,6 +158,8 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
             System.out.println("Reading finished");
 
             // Close the resources
+            Shell.printDebug("Reading finished");
+            // Close the reader
             reader.close();
             inputStream.close();
 
@@ -157,7 +167,6 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
             throw new RuntimeException(e.getMessage());
         }
     }
-
 
     /**
      * Returns hashed password
@@ -172,6 +181,7 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
             // Convert the byte array to a hexadecimal string
             return Base64.getEncoder().encodeToString(encodedHash);
         } catch (NoSuchAlgorithmException e) {
+            Shell.printError("No such algorithm for SHA256");
             return null;
         }
     }

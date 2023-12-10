@@ -1,5 +1,6 @@
 package com.server;
 
+import com.api.auth.AuthenticationToken;
 import com.api.rest.RestResponse;
 import com.api.rest.SingleDataRequest;
 import com.api.utils.JwtTokenUtil;
@@ -8,11 +9,9 @@ import com.api.common.shell.Shell;
 import com.api.common.shell.StorePasswords;
 import com.api.common.tls.TLSClientConfig;
 import com.api.common.tls.TLSConfigFactory;
-import com.api.rest.requests.CopyRequest;
-import com.api.rest.requests.LoginRequest;
-import com.api.rest.requests.MkDirRequest;
-import com.api.rest.requests.PutRequest;
+import com.api.rest.requests.*;
 import com.api.services.DispatcherService;
+import com.api.utils.UtilsBase;
 import com.client.serviceClients.FAccessClient;
 import com.client.serviceClients.FAuthClient;
 import com.client.serviceClients.FStorageClient;
@@ -32,6 +31,10 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 
+import java.util.Objects;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Objects;
 
 
@@ -73,8 +76,8 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
     }
 
     @Bean
-    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> serverConfig() throws IOException, URISyntaxException, UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
-        StorePasswords passwords = Shell.loadTrustKeyStoresPass();
+    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> serverConfig() {
+        StorePasswords passwords = Shell.loadTrustKeyStoresPass(args);
         TLSClientConfig tls = TLSConfigFactory.getInstance().forClient()
                 .withConfigFile(CLIENT_CONFIG_FILE)
                 .withKeyStoreFile(KEYSTORE_FILE)
@@ -91,28 +94,30 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @GetMapping("/init-connection/{username}")
     @Override
-    public ResponseEntity<String> requestDHPublicKey(@PathVariable String username) throws IOException, InterruptedException {
+    public ResponseEntity<String> requestDHPublicKey(@PathVariable String username) {
+        var response = authClient.requestDHPublicKey(username);
+        HttpStatus status = HttpStatus.resolve(response.statusCode());
 
-        HttpResponse<String> responseEntity = authClient.requestDHPublicKey(username);
-        HttpStatus status = HttpStatus.resolve(responseEntity.statusCode());
-
-        return new RestResponse(status).buildResponse(responseEntity.body());
+        return new RestResponse(status).buildResponse(response.body());
     }
 
     @PostMapping("/login/{username}")
     @Override
-    public ResponseEntity<String> login(@RequestBody String request, @PathVariable String username) throws IOException, InterruptedException {
+    public ResponseEntity<String> login(@RequestBody String request, @PathVariable String username) {
+        var response = authClient.authenticateUser(request, username);
+        HttpStatus status = HttpStatus.resolve(response.statusCode());
 
-        HttpResponse<String> responseEntity = authClient.authenticateUser(request, username);
-        HttpStatus status = HttpStatus.resolve(responseEntity.statusCode());
-
-        return new RestResponse(status).buildResponse(responseEntity.body());
+        return new RestResponse(status).buildResponse(response.body());
 
     }
 
     @GetMapping("/ls/{username}")
     @Override
-    public ResponseEntity<String> listFiles(@PathVariable String username) {
+    public ResponseEntity<String> listFiles(@PathVariable String username, @RequestHeader("Authorization") String ... headers) {
+        if (!validateTokens(headers, username)) {
+            return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User not authenticated for this operation.");
+        }
+
         var response = storageClient.listDirectories(username);
 
         // Check if FStorage is on
@@ -126,7 +131,11 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @GetMapping("/ls/{username}/{*path}")
     @Override
-    public ResponseEntity<String> listFiles(@PathVariable String username, @PathVariable String path) {
+    public ResponseEntity<String> listFilesWithPath(@PathVariable String username, @PathVariable String path, @RequestHeader("Authorization") String ... headers) {
+        if (!validateTokens(headers, username)) {
+            return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User not authenticated for this operation.");
+        }
+
         var response = storageClient.listDirectories(username, path.substring(1));
 
         // Check if FStorage is on
@@ -140,7 +149,11 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @PostMapping("/mkdir/{username}")
     @Override
-    public ResponseEntity<String> makeDirectory(@PathVariable String username, @RequestBody MkDirRequest mkDirRequest) {
+    public ResponseEntity<String> makeDirectory(@PathVariable String username, @RequestBody MkDirRequest mkDirRequest, @RequestHeader("Authorization") String ... headers) {
+        if (!validateTokens(headers, username)) {
+            return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User not authenticated for this operation.");
+        }
+
         var response = storageClient.createFolder(username, mkDirRequest);
 
         // Check if FStorage is on
@@ -154,7 +167,11 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @PutMapping("/put/{username}")
     @Override
-    public ResponseEntity<String> put(@PathVariable String username, @RequestBody PutRequest request) {
+    public ResponseEntity<String> put(@PathVariable String username, @RequestBody PutRequest request, @RequestHeader("Authorization") String ... headers) {
+        if (!validateTokens(headers, username)) {
+            return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User not authenticated for this operation.");
+        }
+
         var response = storageClient.createFile(username, request);
 
         // Check if FStorage is on
@@ -168,7 +185,11 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @GetMapping("/get/{username}/{*path}")
     @Override
-    public ResponseEntity<String> get(@PathVariable String username, @PathVariable String path) {
+    public ResponseEntity<String> get(@PathVariable String username, @PathVariable String path, @RequestHeader("Authorization") String ... headers) {
+        if (!validateTokens(headers, username)) {
+            return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User not authenticated for this operation.");
+        }
+
         var response = storageClient.getFile(username, path.substring(1));
 
         if (response == null) {
@@ -181,7 +202,11 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @PutMapping("/cp/{username}")
     @Override
-    public ResponseEntity<String> copy(@PathVariable String username, @RequestBody CopyRequest copyRequest) {
+    public ResponseEntity<String> copy(@PathVariable String username, @RequestBody CopyRequest copyRequest, @RequestHeader("Authorization") String ... headers) {
+        if (!validateTokens(headers, username)) {
+            return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User not authenticated for this operation.");
+        }
+
         var response = storageClient.copyFile(username, copyRequest);
 
         // Check if FStorage is on
@@ -195,7 +220,11 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @DeleteMapping("/rm/{username}/{*path}")
     @Override
-    public ResponseEntity<String> remove(@PathVariable String username, @PathVariable String path) {
+    public ResponseEntity<String> remove(@PathVariable String username, @PathVariable String path, @RequestHeader("Authorization") String ... headers) {
+        if (!validateTokens(headers, username)) {
+            return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User not authenticated for this operation.");
+        }
+
         var response = storageClient.removeFile(username, path.substring(1));
 
         if (response == null) {
@@ -208,7 +237,11 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @GetMapping("/file/{username}/{*path}")
     @Override
-    public ResponseEntity<String> file(@PathVariable String username, @PathVariable String path) {
+    public ResponseEntity<String> file(@PathVariable String username, @PathVariable String path, @RequestHeader("Authorization") String ... headers) {
+        if (!validateTokens(headers, username)) {
+            return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User not authenticated for this operation.");
+        }
+
         var response = storageClient.fileProperties(username, path.substring(1));
 
         if (response == null) {
@@ -237,6 +270,23 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
         }
     }
 
+    public boolean validateTokens(String[] headers, String username) {
+        if (headers == null || headers.length < 1) {
+            return false;   // No headers given
+        }
+
+        String authTokenHeader = headers[0];
+        //String accessTokenHeader = headers[1];
+
+        // Extract the token from the Authorization header
+        String authToken = AuthenticationToken.extractToken(authTokenHeader);
+        //String acessToken = AuthenticationToken.extractToken(accessTokenHeader);
+        Shell.printDebug("Token: " + authToken);
+
+        return AuthenticationToken.verifyToken(authToken, authRSAPublicKey, username);
+    }
+
+
     /**
      * Makes a request to the FAuth module, seeking to obtain the RSA Public Key in order to be able to verify
      * tokens authenticity
@@ -246,13 +296,26 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
      * @throws NoSuchAlgorithmException
      * @throws InvalidKeySpecException
      */
-    private static void requestAuthRSAPublicKey() throws IOException, InterruptedException, NoSuchAlgorithmException, InvalidKeySpecException {
-        HttpResponse<String> responseEntity = authClient.rsaPublicKeyExchange();
-        HttpStatus status = HttpStatus.resolve(responseEntity.statusCode());
+    private static void requestAuthRSAPublicKey() {
+        try {
+            var response = authClient.rsaPublicKeyExchange();
 
-        if (Objects.requireNonNull(status).is2xxSuccessful()) {
-            SingleDataRequest key = SingleDataRequest.fromJsonString(responseEntity.body());
-            authRSAPublicKey = UtilsBase.createPublicKey(key.data(), SIGNATURE_ALGORITHM);
+            // Check if there was a response
+            if (response == null) {
+                Shell.printError("Could not contact FAuth server.");
+                return;
+            }
+
+            HttpStatus status = HttpStatus.resolve(response.statusCode());
+
+            if (Objects.requireNonNull(status).is2xxSuccessful()) {
+                SingleDataRequest key = SingleDataRequest.fromJsonString(response.body());
+                authRSAPublicKey = UtilsBase.createPublicKey(key.data(), SIGNATURE_ALGORITHM);
+            }
+        } catch (NoSuchAlgorithmException e) {
+            Shell.printDebug("No such algorithm for RSA signature.");
+        } catch (InvalidKeySpecException e) {
+            Shell.printError("Invalid key spec.");
         }
     }
 
@@ -274,5 +337,4 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
             accessRSAPublicKey = UtilsBase.createPublicKey(key.data(), SIGNATURE_ALGORITHM);
         }
     }
-
 }

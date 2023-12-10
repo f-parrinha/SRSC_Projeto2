@@ -27,17 +27,12 @@ public class RestRequest<T> {
 
     /** Variables */
     private static RestRequest<?> request;
-    private boolean debugOn;
 
 
     private RestRequest(URI baseUri) {
         this.baseUri = baseUri;
-        this.debugOn = false;
     }
-    private RestRequest(URI baseUri, boolean debugOn) {
-        this.baseUri = baseUri;
-        this.debugOn = debugOn;
-    }
+
 
     /**
      * Returns the instance of RestRequest (with debug mode off as default)
@@ -45,54 +40,15 @@ public class RestRequest<T> {
      * @return RestRequest singleton
      */
     public static RestRequest<?> getInstance(URI baseUri) {
-        if(request == null)
+        if (request == null) {
             request = new RestRequest<>(baseUri);
+        }
         request.setUri(baseUri);
         return request;
     }
 
     private void setUri(URI baseUri) {
         this.baseUri = baseUri;
-    }
-
-    /**
-     * Returns the instance of RestRequest (with custom debug mode)
-     * @param baseUri base uri for the rquest (server uri)
-     * @return RestRequest singleton
-     */
-    public static RestRequest<?> getInstance(URI baseUri, boolean debugOn) {
-        if(request == null)
-            request = new RestRequest<>(baseUri);
-        request.setUri(baseUri);
-        request.setDebugOn(debugOn);
-        return request;
-    }
-
-
-
-    public boolean isDebugOn() {
-        return debugOn;
-    }
-
-    public void setDebugOn(boolean debugOn) {
-        this.debugOn = debugOn;
-    }
-
-    /**
-     * Sends a GET request
-     * @param url endpoint url
-     * @param pathArgs args to the path variables
-     * @return HttpRquest GET object
-     */
-    public HttpRequest get(String url) {
-        URI uri = baseUri.resolve(processPathArgs(url));
-        Shell.printDebug("Send REST request to '" + uri + "' with request type as '" + Request.Type.GET + "'");
-        return HttpRequest.newBuilder()
-                .uri(uri)
-                .header(HttpHeaders.ACCEPT, MEDIA_TYPE)
-                .header(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE)
-                .GET()
-                .build();
     }
 
     /**
@@ -120,13 +76,14 @@ public class RestRequest<T> {
      * @param pathArgs args to the path variables
      * @return HttpRquest POST object
      */
-    public HttpRequest post(String url, JsonObject json, String ... pathArgs){
+    public HttpRequest post(String url, String token, JsonObject json, String ... pathArgs){
         URI uri = baseUri.resolve(processPathArgs(url, pathArgs));
         Shell.printDebug("Send REST request to '" + uri + "' with request type as '" + Request.Type.POST + "'");
         return HttpRequest.newBuilder()
                 .uri(uri)
                 .header(HttpHeaders.ACCEPT, MEDIA_TYPE)
                 .header(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE)
+                .header("Authorization", "Bearer " + token)
                 .POST(HttpRequest.BodyPublishers.ofString(json.toString()))
                 .build();
     }
@@ -138,13 +95,14 @@ public class RestRequest<T> {
      * @param pathArgs args to the path variables
      * @return HttpRquest PUT object
      */
-    public HttpRequest put(String url, JsonObject json, String ... pathArgs){
+    public HttpRequest put(String url, String token, JsonObject json, String ... pathArgs){
         URI uri = baseUri.resolve(processPathArgs(url, pathArgs));
         Shell.printDebug("Send REST request to '" + uri + "' with request type as '" + Request.Type.PUT + "'");
         return HttpRequest.newBuilder()
                 .uri(uri)
                 .header(HttpHeaders.ACCEPT, MEDIA_TYPE)
                 .header(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE)
+                .header("Authorization", "Bearer " + token)
                 .PUT(HttpRequest.BodyPublishers.ofString(json.toString()))
                 .build();
     }
@@ -155,13 +113,14 @@ public class RestRequest<T> {
      * @param pathArgs args to the path variables
      * @return HttpRquest GET object
      */
-    public HttpRequest delete(String url, String ... pathArgs) {
+    public HttpRequest delete(String url, String token, String ... pathArgs) {
         URI uri = baseUri.resolve(processPathArgs(url, pathArgs));
         Shell.printDebug("Send REST request to '" + uri + "' with request type as '" + Request.Type.DELETE + "'");
         return HttpRequest.newBuilder()
                 .uri(uri)
                 .header(HttpHeaders.ACCEPT, MEDIA_TYPE)
                 .header(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE)
+                .header("Authorization", "Bearer " + token)
                 .DELETE()
                 .build();
     }

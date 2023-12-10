@@ -1,17 +1,15 @@
 package com.client.shell.commands;
 
-import com.api.common.Utils;
 import com.api.common.shell.Shell;
-import com.api.rest.requests.PutRequest;
-import com.client.AbstractClient;
-import com.client.serviceClients.FDispatcherClient;
 import com.api.common.shell.ShellPreconditions;
+import com.api.rest.requests.PutRequest;
+import com.api.utils.Utils;
+import com.client.serviceClients.FDispatcherClient;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Base64;
 
 /**
  * Class  RmCommand  defines the "put" command ran by the shell.

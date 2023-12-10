@@ -49,8 +49,7 @@ public class RestResponse {
         }
 
         Shell.printDebug("Creating REST response '" + content + "'");
-        String body = statusToString(status, content);
-        return ResponseEntity.status(status).body(body);
+        return ResponseEntity.status(status).body(content);
     }
 
     /**

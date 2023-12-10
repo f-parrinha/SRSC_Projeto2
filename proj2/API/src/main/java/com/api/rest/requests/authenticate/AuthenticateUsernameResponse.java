@@ -1,4 +1,4 @@
-package com.api.requests.authenticate;
+package com.api.rest.requests.authenticate;
 
 import com.api.requests.Request;
 

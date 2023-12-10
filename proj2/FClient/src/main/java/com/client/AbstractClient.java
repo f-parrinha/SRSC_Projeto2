@@ -1,8 +1,8 @@
 package com.client;
 
-import com.api.common.Utils;
 import com.api.common.shell.Shell;
 import com.api.rest.RestResponse;
+import com.api.utils.Utils;
 import org.springframework.http.HttpStatus;
 
 import javax.net.ssl.SSLContext;
@@ -17,7 +17,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Objects;
 
 
@@ -77,7 +76,6 @@ public abstract class AbstractClient {
             String[] response_download = responseText.split(RestResponse.DOWNLOAD_CODE);
             responseText = response_download[0];
             writeDownload(response_download[1]);
-            Shell.printDebug("test");
         }
 
         // Generate client response

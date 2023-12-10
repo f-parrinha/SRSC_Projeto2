@@ -7,18 +7,11 @@ import com.api.common.tls.TLSClientConfig;
 import com.api.common.tls.TLSConfigFactory;
 import com.client.serviceClients.FDispatcherClient;
 import com.client.shell.commands.*;
-import org.apache.catalina.Store;
-import org.springframework.boot.SpringApplication;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
 
 /**
  * Class  FClientShell  creates an interactive shell to communicate with the FServer
