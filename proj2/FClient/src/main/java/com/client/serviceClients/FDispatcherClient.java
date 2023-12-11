@@ -5,9 +5,10 @@ import com.api.rest.RestRequest;
 import com.api.rest.requests.CopyRequest;
 import com.api.rest.requests.MkDirRequest;
 import com.api.rest.requests.PutRequest;
+import com.api.rest.requests.SingleDataRequest;
 import com.api.rest.requests.authenticate.*;
+import com.api.utils.JwtTokenUtil;
 import com.client.AbstractClient;
-import com.api.rest.requests.LoginRequest;
 import com.api.services.DispatcherService;
 import org.springframework.http.HttpStatus;
 
@@ -41,7 +42,7 @@ public class FDispatcherClient extends AbstractClient implements DispatcherServi
 
 
     @Override
-    public HttpResponse<String> login(String username, String password) throws IOException, InterruptedException {
+    public HttpResponse<String> login(String username, String password) {
 
         HttpResponse<String> responseEntity = requestDHPublicKey(username);
         HttpStatus status = HttpStatus.resolve(responseEntity.statusCode());
@@ -50,74 +51,79 @@ public class FDispatcherClient extends AbstractClient implements DispatcherServi
             return responseEntity;
 
         AuthenticateUsernameResponse response = AuthenticateUsernameResponse.fromJsonString(responseEntity.body());
-        return createSecureLoginRequest(loginReq, response);
+        return createSecureLoginRequest(username, password, response);
     }
 
     @Override
-    public HttpResponse<String> requestDHPublicKey(String username) throws IOException, InterruptedException {
-        RequestKeyExchange requestKeyExchange = new RequestKeyExchange(username);
-        JsonObject requestKeyExchangeJson = requestKeyExchange.serialize();
-        HttpRequest request = RestRequest.getInstance(baseUri).post("/init-connection", requestKeyExchangeJson);
-        return client.send(request, HttpResponse.BodyHandlers.ofString());
-    }
-
-    @Override
-    public HttpResponse<String> listFiles(String username) {
-        HttpRequest request = RestRequest.getInstance(baseUri).get("/ls/{username}", username);
+    public HttpResponse<String> requestDHPublicKey(String username) {
+        HttpRequest request = RestRequest.getInstance(baseUri).get("/init-connection/{username}", JwtTokenUtil.NO_TOKEN, JwtTokenUtil.NO_TOKEN, username);
         return sendRequest(request);
     }
 
     @Override
-    public HttpResponse<String> listFiles(String username, String path) {
-        HttpRequest request = RestRequest.getInstance(baseUri).get("/ls/{username}/{path}", username, path);
+    public HttpResponse<String> listFiles(String username, String authHeader, String accessHeader) {
+        HttpRequest request = RestRequest.getInstance(baseUri).get("/ls/{username}", authToken, accessToken, username);
         return sendRequest(request);
     }
 
     @Override
-    public HttpResponse<String> makeDirectory(String username, MkDirRequest mkDirRequest) {
+    public HttpResponse<String> listFiles(String username, String path, String authHeader, String accessHeader) {
+        HttpRequest request = RestRequest.getInstance(baseUri).get("/ls/{username}/{path}", authToken, accessToken, username, path);
+        return sendRequest(request);
+    }
+
+    @Override
+    public HttpResponse<String> makeDirectory(String username, MkDirRequest mkDirRequest,String authHeader, String accessHeader) {
         JsonObject json = mkDirRequest.serialize();
-        HttpRequest request = RestRequest.getInstance(baseUri).post("/mkdir/{username}", json, username);
+        HttpRequest request = RestRequest.getInstance(baseUri).post("/mkdir/{username}", authToken, accessToken, json, username);
         return sendRequest(request);
     }
 
     @Override
-    public HttpResponse<String> put(String username, PutRequest putRequest) {
+    public HttpResponse<String> put(String username, PutRequest putRequest,String authHeader, String accessHeader) {
         JsonObject json = putRequest.serialize();
-        HttpRequest request = RestRequest.getInstance(baseUri).put("/put/{username}", json, username);
+        HttpRequest request = RestRequest.getInstance(baseUri).put("/put/{username}", authToken, accessToken, json, username);
         return sendRequest(request);
     }
 
     @Override
-    public HttpResponse<String> get(String username, String path) {
-        HttpRequest request = RestRequest.getInstance(baseUri).get("/get/{username}/{path}", username, path);
+    public HttpResponse<String> get(String username, String path,String authHeader, String accessHeader) {
+        HttpRequest request = RestRequest.getInstance(baseUri).get("/get/{username}/{path}", authToken, accessToken, username, path);
         return sendRequest(request);
     }
 
     @Override
-    public HttpResponse<String> copy(String username, CopyRequest copyRequest) {
+    public HttpResponse<String> copy(String username, CopyRequest copyRequest,String authHeader, String accessHeader) {
         JsonObject json = copyRequest.serialize();
-        HttpRequest request = RestRequest.getInstance(baseUri).put("/cp/{username}", json, username);
+        HttpRequest request = RestRequest.getInstance(baseUri).put("/cp/{username}", authToken, accessToken, json, username);
         return sendRequest(request);
     }
 
     @Override
-    public HttpResponse<String> remove(String username, String path) {
-        HttpRequest request = RestRequest.getInstance(baseUri).delete("/rm/{username}/{path}", username, path);
+    public HttpResponse<String> remove(String username, String path,String authHeader, String accessHeader) {
+        HttpRequest request = RestRequest.getInstance(baseUri).delete("/rm/{username}/{path}", authToken, accessToken, username, path);
         return sendRequest(request);
     }
 
     @Override
-    public HttpResponse<String> file(String username, String path) {
-        HttpRequest request = RestRequest.getInstance(baseUri).get("/file/{username}/{path}", username, path);
+    public HttpResponse<String> file(String username, String path,String authHeader, String accessHeader) {
+        HttpRequest request = RestRequest.getInstance(baseUri).get("/file/{username}/{path}", authToken, accessToken, username, path);
         return sendRequest(request);
     }
 
+    /**
+     * Creates a secure login request by getting auth tokens and access tokens
+     * @param username username to log in
+     * @param password user's password
+     * @param response Authenticate Username response
+     * @return HttpResponse for the request
+     */
     private HttpResponse<String> createSecureLoginRequest(String username, String password, AuthenticateUsernameResponse response) {
         try {
-            // Create request
+            // Create Auth request
             AuthenticatePasswordRequest loginRequest = secureLogin.formLoginRequest(password, response.secureRandom(), response.publicKey());
             JsonObject loginJson = loginRequest.serialize();
-            HttpRequest request = RestRequest.getInstance(baseUri).post("/login", authToken, loginJson);
+            HttpRequest request = RestRequest.getInstance(baseUri).post("/login/{username}", authToken, accessToken, loginJson, username);
 
             var responseEntity = sendRequest(request);
             var status = HttpStatus.resolve(responseEntity.statusCode());
@@ -127,54 +133,38 @@ public class FDispatcherClient extends AbstractClient implements DispatcherServi
                 return responseEntity;
             }
 
-            // Request was successful
-            SuccessfullAuthenticationResponse resp = SuccessfullAuthenticationResponse.fromJsonString(responseEntity.body());
+            // Auth request was successful
+            SingleDataRequest resp = SingleDataRequest.fromJsonString(responseEntity.body());
 
-            byte[] plainData = secureLogin.decryptData(resp.encryptedData());
+            byte[] plainData = secureLogin.decryptData(resp.data());
             String jsonString = new String(plainData, StandardCharsets.UTF_8);
 
             AuthenticatePasswordResponse pwdResp = AuthenticatePasswordResponse.fromJsonString(jsonString);
             authToken = pwdResp.token();
-            return responseEntity;
 
-        } catch (InvalidKeyException |
-                 InvalidAlgorithmParameterException | IllegalBlockSizeException |
-                 BadPaddingException e) {
-            return null;
-        }
-        //////
-        try {
+            // Create Access request
+            HttpResponse<String> accessControlToken = requestAccessControlToken(username);
+            HttpStatus httpStatus = HttpStatus.resolve(accessControlToken.statusCode());
 
-            AuthenticatePasswordRequest loginRequest = secureLogin.formLoginRequest(password, response.secureRandom(), response.publicKey());
-            JsonObject loginJson = loginRequest.serialize();
-
-            HttpRequest request = RestRequest.getInstance(baseUri).post("/login/{username}", loginJson, username);
-            responseEntity = client.send(request, HttpResponse.BodyHandlers.ofString());
-            status = HttpStatus.resolve(responseEntity.statusCode());
-
-            if (status != null && status.is2xxSuccessful()) {
-                SingleDataRequest resp = SingleDataRequest.fromJsonString(responseEntity.body());
-
-                byte[] plainData = secureLogin.decryptData(resp.data());
-                String jsonString = new String(plainData, StandardCharsets.UTF_8);
-
-                AuthenticatePasswordResponse pwdResp = AuthenticatePasswordResponse.fromJsonString(jsonString);
-                authToken = pwdResp.token();
-
-                HttpResponse<String> accessControlToken = requestAccessControlToken(username);
-                HttpStatus httpStatus = HttpStatus.resolve(accessControlToken.statusCode());
-
-                if (httpStatus != null && httpStatus.is2xxSuccessful()) accessToken = accessControlToken.body();
-
+            // Check if Access request failed
+            if (httpStatus == null || !httpStatus.is2xxSuccessful()) {
+                return responseEntity;
             }
 
+            accessToken = accessControlToken.body();
+            System.out.println(accessToken);
             return responseEntity;
+
         } catch (InvalidKeyException |
                  InvalidAlgorithmParameterException | IllegalBlockSizeException |
                  BadPaddingException e) {
             return null;
         }
-        ////////
+    }
+
+    private HttpResponse<String> requestAccessControlToken(String username) {
+        var request = RestRequest.getInstance(baseUri).get("/access/{username}", authToken, accessToken, username);
+        return sendRequest(request);
     }
 }
 

@@ -1,6 +1,6 @@
 package com.server.fileManager;
 
-import com.api.utils.Utils;
+import com.api.utils.UtilsBase;
 
 import java.util.Arrays;
 
@@ -40,7 +40,7 @@ public class FileManager {
 
         // Travel through path
         for (var folder : paths) {
-            String path = Utils.createPathString(Arrays.copyOfRange(paths, 0 ,idx+1));
+            String path = UtilsBase.createPathString(Arrays.copyOfRange(paths, 0 ,idx+1));
             Folder result = parent.getFolder(folder);
 
             // Check if it needs to create a folder (in case current does not exist)

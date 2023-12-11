@@ -1,19 +1,14 @@
 package com.client.serviceClients;
 
-import com.api.auth.AuthenticationToken;
-import com.api.rest.requests.authenticate.AuthenticatePasswordRequest;
-import com.api.rest.RestRequest;
-import com.api.rest.requests.authenticate.RequestKeyExchange;
 import com.api.rest.requests.authenticate.AuthenticatePasswordRequest;
 import com.api.rest.RestRequest;
 import com.api.services.AuthService;
+import com.api.utils.JwtTokenUtil;
 import com.client.AbstractClient;
-import io.netty.handler.ssl.SslContext;
 
 import javax.json.JsonObject;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
-import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
@@ -26,13 +21,13 @@ public class FAuthClient extends AbstractClient implements AuthService<HttpRespo
 
     @Override
     public HttpResponse<String> rsaPublicKeyExchange()  {
-        HttpRequest request = RestRequest.getInstance(baseUri).get("/request-RSA-Key", AuthenticationToken.EMPTY);
+        HttpRequest request = RestRequest.getInstance(baseUri).get("/request-RSA-Key", JwtTokenUtil.NO_TOKEN, JwtTokenUtil.NO_TOKEN);
         return sendRequest(request);
     }
 
     @Override
-    public HttpResponse<String> requestDHPublicKey(String username) throws IOException, InterruptedException {
-        HttpRequest request = RestRequest.getInstance(baseUri).get("/auth/init-connection/{username}", "", username);
+    public HttpResponse<String> requestDHPublicKey(String username) {
+        HttpRequest request = RestRequest.getInstance(baseUri).get("/auth/init-connection/{username}", JwtTokenUtil.NO_TOKEN, JwtTokenUtil.NO_TOKEN, username);
         return sendRequest(request);
     }
 
@@ -41,7 +36,7 @@ public class FAuthClient extends AbstractClient implements AuthService<HttpRespo
         AuthenticatePasswordRequest req = AuthenticatePasswordRequest.fromJsonString(loginRequest);
         JsonObject requestKeyExchangeJson = req.serialize();
 
-        HttpRequest request = RestRequest.getInstance(baseUri).post("/auth/login/{username}", requestKeyExchangeJson, username);
+        HttpRequest request = RestRequest.getInstance(baseUri).post("/auth/login/{username}", JwtTokenUtil.NO_TOKEN, JwtTokenUtil.NO_TOKEN, requestKeyExchangeJson, username);
         return sendRequest(request);
         }
 }

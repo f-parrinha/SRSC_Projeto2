@@ -1,6 +1,7 @@
 package com.client.shell.commands;
 
 import com.api.rest.requests.MkDirRequest;
+import com.api.utils.JwtTokenUtil;
 import com.client.serviceClients.FDispatcherClient;
 import com.api.common.shell.ShellPreconditions;
 
@@ -30,7 +31,7 @@ public class MkDirCommand extends ShellCommand implements Command {
         String username = input[1];
         String path = input[2];
 
-        var response = client.makeDirectory(username, new MkDirRequest(path));
+        var response = client.makeDirectory(username, new MkDirRequest(path), JwtTokenUtil.NO_TOKEN, JwtTokenUtil.NO_TOKEN);
         client.readResponse(response);
     }
 }

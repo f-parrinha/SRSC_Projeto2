@@ -1,6 +1,6 @@
 package com.api.rest.requests.authenticate;
 
-import com.api.requests.Request;
+import com.api.rest.requests.Request;
 
 import javax.json.Json;
 import javax.json.JsonObject;

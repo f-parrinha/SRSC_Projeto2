@@ -1,9 +1,10 @@
 package com.api.auth;
 
+import com.api.common.shell.Shell;
 import com.api.utils.UtilsBase;
-import com.api.requests.authenticate.AuthenticatePasswordRequest;
-import com.api.requests.authenticate.AuthenticatePasswordResponse;
-import com.api.rest.SingleDataRequest;
+import com.api.rest.requests.authenticate.AuthenticatePasswordRequest;
+import com.api.rest.requests.authenticate.AuthenticatePasswordResponse;
+import com.api.rest.requests.SingleDataRequest;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -17,13 +18,21 @@ import static com.api.utils.UtilsBase.*;
 
 public class SecureLogin {
     private static final short NONCE_SIZE = 16;
-    private final DHAlgorithm dhAlgorithm;
-    private final CipherAESAlgorithm cipherAESAlgorithm;
+    private DHAlgorithm dhAlgorithm;
+    private CipherAESAlgorithm cipherAESAlgorithm;
     private byte[] secureRandom;
 
-    public SecureLogin() throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException {
-        dhAlgorithm = new DHAlgorithm();
-        cipherAESAlgorithm = new CipherAESAlgorithm();
+    public SecureLogin() {
+        try {
+            dhAlgorithm = new DHAlgorithm();
+            cipherAESAlgorithm = new CipherAESAlgorithm();
+        } catch (NoSuchPaddingException e) {
+            Shell.printError("Wrong padding.");
+        } catch (NoSuchAlgorithmException e) {
+            Shell.printError("No such algorithm");
+        } catch (InvalidKeyException e) {
+            Shell.printError("Invalid key.");
+        }
     }
     public byte[] getSecureRandom() {
         return secureRandom;
@@ -72,7 +81,6 @@ public class SecureLogin {
      * - SecureRandom are used to prevent reply attacks
      *
      * @param pwd               Client password
-     * @param username          Client username
      * @param serversRandom     Random
      * @param receivedPublicKey Client DH Public Key
      * @return Request

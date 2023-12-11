@@ -1,7 +1,8 @@
 package com.api.utils;
 
 import com.api.access.PermissionsType;
-import com.api.requests.Request;
+import com.api.common.shell.Shell;
+import com.api.rest.requests.Request;
 import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -18,6 +19,8 @@ import java.util.UUID;
 
 public class JwtTokenUtil {
 
+    public static final String NO_TOKEN = "";
+
     public static String createJwtToken(PrivateKey privateKey, String ... args) {
         Date creationTime = new Date();
         Date expirationTime = new Date(creationTime.getTime() + 3600000); // Valid for 1 hour
@@ -29,12 +32,6 @@ public class JwtTokenUtil {
         return createToken(args[0], privateKey, args[1], expirationTime, tokenID,  PermissionsType.fromString(args[2]));
     }
 
-    public static boolean verifyJwtToken(String token, PublicKey publicKey, String ... arg) throws ParseException {
-        SignedJWT signedJWT = SignedJWT.parse(token);
-        JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
-        return arg.length == 0 ? verifyToken(token,publicKey, claimsSet) : verifyToken(token, publicKey, Request.Type.valueOf(arg[0]), claimsSet);
-    }
-
     public static String extractToken(String authorizationHeader) {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             return authorizationHeader.substring(7);
@@ -42,12 +39,36 @@ public class JwtTokenUtil {
         return null;
     }
 
-    private static boolean verifyToken(String token, PublicKey publicKey, JWTClaimsSet claimsSet) {
-        return verifySignature(token, publicKey)  && verifyTTL(claimsSet);
+    public static boolean verifyAuthToken(String token, PublicKey publicKey, String username) {
+        if (token == null || token.isEmpty()) {
+            Shell.printError("Could not parse token.");
+            return false;
+        }
+
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+            return verifySignature(signedJWT, publicKey)  && verifyTTL(claimsSet) && verifyOwner(claimsSet, username);
+        } catch (ParseException e) {
+            Shell.printError("Could not parse token.");
+            return false;
+        }
     }
 
-    private static boolean verifyToken(String token, PublicKey publicKey, Request.Type requestType, JWTClaimsSet claimsSet) throws ParseException {
-        return verifySignature(token, publicKey) && verifyTTL(claimsSet) && verifyAccess(claimsSet, requestType);
+    public static boolean verifyAccessToken(String token, PublicKey publicKey, Request.Type requestType) {
+        if (token == null || token.isEmpty()) {
+            Shell.printError("Could not parse token.");
+            return false;
+        }
+
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+            return verifySignature(signedJWT, publicKey) && verifyTTL(claimsSet) && verifyAccess(claimsSet, requestType);
+        } catch (ParseException e) {
+            Shell.printError("Could not parse token.");
+            return false;
+        }
     }
 
     private static String createToken(String username, PrivateKey privateKey, String issuer, Date expirationTime, String idClaim) {
@@ -73,9 +94,8 @@ public class JwtTokenUtil {
                 .compact();
     }
 
-    private static boolean verifySignature(String token, PublicKey publicKey) {
+    private static boolean verifySignature(SignedJWT signedJWT, PublicKey publicKey) {
         try {
-            SignedJWT signedJWT = SignedJWT.parse(token);
             JWSVerifier verifier = new RSASSAVerifier((RSAPublicKey) publicKey);
 
             return signedJWT.verify(verifier);
@@ -97,9 +117,7 @@ public class JwtTokenUtil {
     }
 
     private static boolean verifyAccess(JWTClaimsSet claimsSet, Request.Type requestType) throws ParseException {
-
         PermissionsType accessLevel = PermissionsType.fromString(claimsSet.getStringClaim("accessLevel"));
-
         switch (requestType) {
             case GET:
                 return accessLevel.canRead() || accessLevel.canWrite();
@@ -111,6 +129,8 @@ public class JwtTokenUtil {
 
     }
 
-
-
+    private static boolean verifyOwner(JWTClaimsSet claimsSet, String owner) {
+        String subject = claimsSet.getSubject();
+        return owner.equals(subject);
+    }
 }

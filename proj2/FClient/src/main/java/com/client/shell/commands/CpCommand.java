@@ -2,6 +2,7 @@ package com.client.shell.commands;
 
 import com.api.common.shell.Shell;
 import com.api.rest.requests.CopyRequest;
+import com.api.utils.JwtTokenUtil;
 import com.client.serviceClients.FDispatcherClient;
 import com.api.common.shell.ShellPreconditions;
 
@@ -38,7 +39,7 @@ public class CpCommand extends ShellCommand implements Command {
         String path1 = tmp1[0]; String path2 = tmp2[0];
         String file1 = tmp1[1]; String file2 = tmp2[1];
 
-        var response = client.copy(username, new CopyRequest(path1, file1, path2, file2));
+        var response = client.copy(username, new CopyRequest(path1, file1, path2, file2), JwtTokenUtil.NO_TOKEN, JwtTokenUtil.NO_TOKEN);
         client.readResponse(response);
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders;
 import javax.json.JsonObject;
 import java.net.URI;
 import java.net.http.HttpRequest;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -57,14 +58,15 @@ public class RestRequest<T> {
      * @param pathArgs args to the path variables
      * @return HttpRquest GET object
      */
-    public HttpRequest get(String url, String token, String ... pathArgs) {
+    public HttpRequest get(String url, String authToken, String accessToken, String ... pathArgs) {
         URI uri = baseUri.resolve(processPathArgs(url, pathArgs));
         Shell.printDebug("Send REST request to '" + uri + "' with request type as '" + Request.Type.GET + "'");
         return HttpRequest.newBuilder()
                 .uri(uri)
                 .header(HttpHeaders.ACCEPT, MEDIA_TYPE)
                 .header(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE)
-                .header("Authorization", "Bearer " + token)
+                .header("Authorization", "Bearer " + authToken)
+                .header("Access", "Bearer " + accessToken)
                 .GET()
                 .build();
     }
@@ -76,14 +78,16 @@ public class RestRequest<T> {
      * @param pathArgs args to the path variables
      * @return HttpRquest POST object
      */
-    public HttpRequest post(String url, String token, JsonObject json, String ... pathArgs){
+    public HttpRequest post(String url, String authToken, String accessToken, JsonObject json, String ... pathArgs){
+        System.out.println(Arrays.toString(pathArgs));
         URI uri = baseUri.resolve(processPathArgs(url, pathArgs));
         Shell.printDebug("Send REST request to '" + uri + "' with request type as '" + Request.Type.POST + "'");
         return HttpRequest.newBuilder()
                 .uri(uri)
                 .header(HttpHeaders.ACCEPT, MEDIA_TYPE)
                 .header(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE)
-                .header("Authorization", "Bearer " + token)
+                .header("Authorization", "Bearer " + authToken)
+                .header("Access", "Bearer " + accessToken)
                 .POST(HttpRequest.BodyPublishers.ofString(json.toString()))
                 .build();
     }
@@ -95,14 +99,15 @@ public class RestRequest<T> {
      * @param pathArgs args to the path variables
      * @return HttpRquest PUT object
      */
-    public HttpRequest put(String url, String token, JsonObject json, String ... pathArgs){
+    public HttpRequest put(String url, String authToken, String accessToken, JsonObject json, String ... pathArgs){
         URI uri = baseUri.resolve(processPathArgs(url, pathArgs));
         Shell.printDebug("Send REST request to '" + uri + "' with request type as '" + Request.Type.PUT + "'");
         return HttpRequest.newBuilder()
                 .uri(uri)
                 .header(HttpHeaders.ACCEPT, MEDIA_TYPE)
                 .header(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE)
-                .header("Authorization", "Bearer " + token)
+                .header("Authorization", "Bearer " + authToken)
+                .header("Access", "Bearer " + accessToken)
                 .PUT(HttpRequest.BodyPublishers.ofString(json.toString()))
                 .build();
     }
@@ -113,14 +118,15 @@ public class RestRequest<T> {
      * @param pathArgs args to the path variables
      * @return HttpRquest GET object
      */
-    public HttpRequest delete(String url, String token, String ... pathArgs) {
+    public HttpRequest delete(String url, String authToken, String accessToken, String ... pathArgs) {
         URI uri = baseUri.resolve(processPathArgs(url, pathArgs));
         Shell.printDebug("Send REST request to '" + uri + "' with request type as '" + Request.Type.DELETE + "'");
         return HttpRequest.newBuilder()
                 .uri(uri)
                 .header(HttpHeaders.ACCEPT, MEDIA_TYPE)
                 .header(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE)
-                .header("Authorization", "Bearer " + token)
+                .header("Authorization", "Bearer " + authToken)
+                .header("Access", "Bearer " + accessToken)
                 .DELETE()
                 .build();
     }

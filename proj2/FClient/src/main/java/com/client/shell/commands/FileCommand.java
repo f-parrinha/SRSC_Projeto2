@@ -1,5 +1,6 @@
 package com.client.shell.commands;
 
+import com.api.utils.JwtTokenUtil;
 import com.client.serviceClients.FDispatcherClient;
 import com.api.common.shell.ShellPreconditions;
 
@@ -29,7 +30,7 @@ public class FileCommand extends ShellCommand implements Command {
         String username = input[1];
         String path_file = input[2];
 
-        var response = client.file(username, path_file);
+        var response = client.file(username, path_file, JwtTokenUtil.NO_TOKEN, JwtTokenUtil.NO_TOKEN);
         client.readResponse(response);
     }
 }

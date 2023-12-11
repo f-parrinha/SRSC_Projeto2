@@ -31,7 +31,7 @@ public interface DispatcherService<T> {
      * @param username who is requesting
      * @return response (text)
      */
-    T listFiles(String username, String ... headers) ;
+    T listFiles(String username, String authToken, String accessToken);
 
 
     /**
@@ -40,7 +40,7 @@ public interface DispatcherService<T> {
      * @param path     directory path to list the files
      * @return response (text)
      */
-    T listFilesWithPath(String username, String path, String ... headers) ;
+    T listFiles(String username, String path, String authToken, String accessToken) ;
 
     /**
      * Requests "mkdir" command
@@ -48,7 +48,7 @@ public interface DispatcherService<T> {
      * @param mkDirRequest record containing mandatory values for the folder creation on the FServer's FileManager
      * @return Response (text)
      */
-    T makeDirectory(String username, MkDirRequest mkDirRequest, String ... headers) ;
+    T makeDirectory(String username, MkDirRequest mkDirRequest, String authToken, String accessToken) ;
 
     /**
      * Request "put" command
@@ -56,7 +56,7 @@ public interface DispatcherService<T> {
      * @param request contains parameters used for the file creation on the FServer's FileManager (path, name, content)
      * @return Response (text)
      */
-    T put(String username, PutRequest request, String ... headers) ;
+    T put(String username, PutRequest request, String authToken, String accessToken) ;
 
     /**
      * Request "get" command
@@ -64,14 +64,14 @@ public interface DispatcherService<T> {
      * @param path     where the get the file
      * @return Response (text)
      */
-    T get(String username, String path, String ... headers) ;
+    T get(String username, String path, String authToken, String accessToken) ;
 
     /**
      * Requests "cpy" command
      * @param username   who is requesting
      * @return Response (text)
      */
-    T copy(String username, CopyRequest copyRequest, String ... headers) ;
+    T copy(String username, CopyRequest copyRequest, String authToken, String accessToken) ;
 
     /**
      * Requests "rm" command
@@ -79,7 +79,7 @@ public interface DispatcherService<T> {
      * @param path     path to file
      * @return Response (text)
      */
-    T remove(String username, String path, String ... headers) ;
+    T remove(String username, String path, String authToken, String accessToken) ;
 
     /**
      * Requests "file" command
@@ -87,5 +87,5 @@ public interface DispatcherService<T> {
      * @param path     path to file
      * @return Response (text)
      */
-    T file(String username, String path, String ... headers) ;
+    T file(String username, String path, String authToken, String accessToken) ;
 }

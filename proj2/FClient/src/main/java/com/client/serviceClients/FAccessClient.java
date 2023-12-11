@@ -1,7 +1,8 @@
 package com.client.serviceClients;
 
-import com.api.requests.RestRequest;
+import com.api.rest.RestRequest;
 import com.api.services.AccessService;
+import com.api.utils.JwtTokenUtil;
 import com.client.AbstractClient;
 
 import javax.net.ssl.SSLContext;
@@ -19,8 +20,7 @@ public class FAccessClient extends AbstractClient implements AccessService<HttpR
 
     @Override
     public HttpResponse<String> rsaPublicKeyExchange() throws IOException, InterruptedException {
-
-        HttpRequest httpRequest = RestRequest.getInstance(baseUri).get("/access/RSAKeyExchange");
+        HttpRequest httpRequest = RestRequest.getInstance(baseUri).get("/access/RSAKeyExchange", JwtTokenUtil.NO_TOKEN, JwtTokenUtil.NO_TOKEN);
         return client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
     }
 

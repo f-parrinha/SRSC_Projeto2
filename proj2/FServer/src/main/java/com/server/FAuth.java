@@ -95,8 +95,10 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
 
             AuthenticateUsernameResponse response = new AuthenticateUsernameResponse(secureLogin.getSecureRandom(), secureLogin.getDHPublicKey());
             usersInLoginProcess.put(username, secureLogin);
-
-        return new RestResponse(HttpStatus.OK).buildResponse(response.serialize().toString());
+            return new RestResponse(HttpStatus.OK).buildResponse(response.serialize().toString());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @PostMapping("/auth/login/{username}")
@@ -117,8 +119,8 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
         String token = JwtTokenUtil.createJwtToken(rsaKeyPair.getPrivate(), username, "FAuth");
         String response = secureLogin.confirmSuccessfulLogin(token, loginRequest.secureRandom(), loginRequest.secureRandom());
 
-        Shell.printDebug("User " + loginRequest.username() + " authenticated successfully.");
-        usersInLoginProcess.remove(loginRequest.username());
+        Shell.printDebug("User " + username + " authenticated successfully.");
+        usersInLoginProcess.remove(username);
 
         return new RestResponse(HttpStatus.OK).buildResponse(response);
 
@@ -136,7 +138,6 @@ public class FAuth extends FServer implements AuthService<ResponseEntity<String>
             InputStream inputStream = resource.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
             Shell.printDebug("Reading of the file initialized.");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(FAuth.class.getClassLoader().getResourceAsStream("credentials.data"))));
 
             // Parse each line and add users to the map
             String line;

@@ -1,5 +1,6 @@
 package com.client.shell.commands;
 
+import com.api.utils.JwtTokenUtil;
 import com.client.serviceClients.FDispatcherClient;
 import com.api.common.shell.ShellPreconditions;
 
@@ -30,7 +31,8 @@ public class LsCommand extends ShellCommand implements Command {
         String username = input[1];
         String path = input.length == ARG_SIZE_WITH_PATH + 1 ? input[2] : "";   // +1 due to "ls" on the input
 
-        var response = path.isEmpty() ? client.listFiles(username) : client.listFiles(username, path);
+        var response = path.isEmpty() ? client.listFiles(username, JwtTokenUtil.NO_TOKEN, JwtTokenUtil.NO_TOKEN) :
+                client.listFiles(username, path, JwtTokenUtil.NO_TOKEN, JwtTokenUtil.NO_TOKEN);
         client.readResponse(response);
     }
 }

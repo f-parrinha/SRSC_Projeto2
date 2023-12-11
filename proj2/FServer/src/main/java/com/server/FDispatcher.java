@@ -1,8 +1,8 @@
 package com.server;
 
-import com.api.auth.AuthenticationToken;
+import com.api.rest.RestRequest;
 import com.api.rest.RestResponse;
-import com.api.rest.SingleDataRequest;
+import com.api.rest.requests.SingleDataRequest;
 import com.api.utils.JwtTokenUtil;
 import com.api.utils.UtilsBase;
 import com.api.common.shell.Shell;
@@ -11,7 +11,6 @@ import com.api.common.tls.TLSClientConfig;
 import com.api.common.tls.TLSConfigFactory;
 import com.api.rest.requests.*;
 import com.api.services.DispatcherService;
-import com.api.utils.UtilsBase;
 import com.client.serviceClients.FAccessClient;
 import com.client.serviceClients.FAuthClient;
 import com.client.serviceClients.FStorageClient;
@@ -27,15 +26,11 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.http.HttpResponse;
-import java.security.*;
-import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 
 import java.util.Objects;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.util.Objects;
 
 
 /**
@@ -113,9 +108,17 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @GetMapping("/ls/{username}")
     @Override
-    public ResponseEntity<String> listFiles(@PathVariable String username, @RequestHeader("Authorization") String ... headers) {
-        if (!validateTokens(headers, username)) {
+    public ResponseEntity<String> listFiles(@PathVariable String username,  @RequestHeader("Authorization") String authHeader, @RequestHeader("Access") String accessHeader) {
+        // Check authentication
+        String authToken = JwtTokenUtil.extractToken(authHeader);
+        if (!JwtTokenUtil.verifyAuthToken(authToken, authRSAPublicKey, username)) {
             return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User not authenticated for this operation.");
+        }
+
+        // Check access
+        String accessToken = JwtTokenUtil.extractToken(accessHeader);
+        if (!JwtTokenUtil.verifyAccessToken(accessToken, accessRSAPublicKey, Request.Type.GET)) {
+            return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User does not have the correct rights for this operation.");
         }
 
         var response = storageClient.listDirectories(username);
@@ -131,9 +134,17 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @GetMapping("/ls/{username}/{*path}")
     @Override
-    public ResponseEntity<String> listFilesWithPath(@PathVariable String username, @PathVariable String path, @RequestHeader("Authorization") String ... headers) {
-        if (!validateTokens(headers, username)) {
+    public ResponseEntity<String> listFiles(@PathVariable String username, @PathVariable String path, @RequestHeader("Authorization") String authHeader, @RequestHeader("Access") String accessHeader) {
+        // Check authentication
+        String authToken = JwtTokenUtil.extractToken(authHeader);
+        if (!JwtTokenUtil.verifyAuthToken(authToken, authRSAPublicKey, username)) {
             return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User not authenticated for this operation.");
+        }
+
+        // Check access
+        String accessToken = JwtTokenUtil.extractToken(accessHeader);
+        if (!JwtTokenUtil.verifyAccessToken(accessToken, accessRSAPublicKey, Request.Type.GET)) {
+            return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User does not have the correct rights for this operation.");
         }
 
         var response = storageClient.listDirectories(username, path.substring(1));
@@ -149,9 +160,17 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @PostMapping("/mkdir/{username}")
     @Override
-    public ResponseEntity<String> makeDirectory(@PathVariable String username, @RequestBody MkDirRequest mkDirRequest, @RequestHeader("Authorization") String ... headers) {
-        if (!validateTokens(headers, username)) {
+    public ResponseEntity<String> makeDirectory(@PathVariable String username, @RequestBody MkDirRequest mkDirRequest,  @RequestHeader("Authorization") String authHeader, @RequestHeader("Access") String accessHeader) {
+        // Check authentication
+        String authToken = JwtTokenUtil.extractToken(authHeader);
+        if (!JwtTokenUtil.verifyAuthToken(authToken, authRSAPublicKey, username)) {
             return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User not authenticated for this operation.");
+        }
+
+        // Check access
+        String accessToken = JwtTokenUtil.extractToken(accessHeader);
+        if (!JwtTokenUtil.verifyAccessToken(accessToken, accessRSAPublicKey, Request.Type.POST)) {
+            return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User does not have the correct rights for this operation.");
         }
 
         var response = storageClient.createFolder(username, mkDirRequest);
@@ -167,11 +186,18 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @PutMapping("/put/{username}")
     @Override
-    public ResponseEntity<String> put(@PathVariable String username, @RequestBody PutRequest request, @RequestHeader("Authorization") String ... headers) {
-        if (!validateTokens(headers, username)) {
+    public ResponseEntity<String> put(@PathVariable String username, @RequestBody PutRequest request,  @RequestHeader("Authorization") String authHeader, @RequestHeader("Access") String accessHeader) {
+        // Check authentication
+        String authToken = JwtTokenUtil.extractToken(authHeader);
+        if (!JwtTokenUtil.verifyAuthToken(authToken, authRSAPublicKey, username)) {
             return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User not authenticated for this operation.");
         }
 
+        // Check access
+        String accessToken = JwtTokenUtil.extractToken(accessHeader);
+        if (!JwtTokenUtil.verifyAccessToken(accessToken, accessRSAPublicKey, Request.Type.PUT)) {
+            return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User does not have the correct rights for this operation.");
+        }
         var response = storageClient.createFile(username, request);
 
         // Check if FStorage is on
@@ -185,9 +211,17 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @GetMapping("/get/{username}/{*path}")
     @Override
-    public ResponseEntity<String> get(@PathVariable String username, @PathVariable String path, @RequestHeader("Authorization") String ... headers) {
-        if (!validateTokens(headers, username)) {
+    public ResponseEntity<String> get(@PathVariable String username, @PathVariable String path, @RequestHeader("Authorization") String authHeader, @RequestHeader("Access") String accessHeader) {
+        // Check authentication
+        String authToken = JwtTokenUtil.extractToken(authHeader);
+        if (!JwtTokenUtil.verifyAuthToken(authToken, authRSAPublicKey, username)) {
             return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User not authenticated for this operation.");
+        }
+
+        // Check access
+        String accessToken = JwtTokenUtil.extractToken(accessHeader);
+        if (!JwtTokenUtil.verifyAccessToken(accessToken, accessRSAPublicKey, Request.Type.GET)) {
+            return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User does not have the correct rights for this operation.");
         }
 
         var response = storageClient.getFile(username, path.substring(1));
@@ -202,9 +236,17 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @PutMapping("/cp/{username}")
     @Override
-    public ResponseEntity<String> copy(@PathVariable String username, @RequestBody CopyRequest copyRequest, @RequestHeader("Authorization") String ... headers) {
-        if (!validateTokens(headers, username)) {
+    public ResponseEntity<String> copy(@PathVariable String username, @RequestBody CopyRequest copyRequest, @RequestHeader("Authorization") String authHeader, @RequestHeader("Access") String accessHeader) {
+        // Check authentication
+        String authToken = JwtTokenUtil.extractToken(authHeader);
+        if (!JwtTokenUtil.verifyAuthToken(authToken, authRSAPublicKey, username)) {
             return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User not authenticated for this operation.");
+        }
+
+        // Check access
+        String accessToken = JwtTokenUtil.extractToken(accessHeader);
+        if (!JwtTokenUtil.verifyAccessToken(accessToken, accessRSAPublicKey, Request.Type.PUT)) {
+            return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User does not have the correct rights for this operation.");
         }
 
         var response = storageClient.copyFile(username, copyRequest);
@@ -220,9 +262,17 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @DeleteMapping("/rm/{username}/{*path}")
     @Override
-    public ResponseEntity<String> remove(@PathVariable String username, @PathVariable String path, @RequestHeader("Authorization") String ... headers) {
-        if (!validateTokens(headers, username)) {
+    public ResponseEntity<String> remove(@PathVariable String username, @PathVariable String path, @RequestHeader("Authorization") String authHeader, @RequestHeader("Access") String accessHeader) {
+        // Check authentication
+        String authToken = JwtTokenUtil.extractToken(authHeader);
+        if (!JwtTokenUtil.verifyAuthToken(authToken, authRSAPublicKey, username)) {
             return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User not authenticated for this operation.");
+        }
+
+        // Check access
+        String accessToken = JwtTokenUtil.extractToken(accessHeader);
+        if (!JwtTokenUtil.verifyAccessToken(accessToken, accessRSAPublicKey, Request.Type.DELETE)) {
+            return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User does not have the correct rights for this operation.");
         }
 
         var response = storageClient.removeFile(username, path.substring(1));
@@ -237,9 +287,17 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
 
     @GetMapping("/file/{username}/{*path}")
     @Override
-    public ResponseEntity<String> file(@PathVariable String username, @PathVariable String path, @RequestHeader("Authorization") String ... headers) {
-        if (!validateTokens(headers, username)) {
+    public ResponseEntity<String> file(@PathVariable String username, @PathVariable String path, @RequestHeader("Authorization") String authHeader, @RequestHeader("Access") String accessHeader) {
+        // Check authentication
+        String authToken = JwtTokenUtil.extractToken(authHeader);
+        if (!JwtTokenUtil.verifyAuthToken(authToken, authRSAPublicKey, username)) {
             return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User not authenticated for this operation.");
+        }
+
+        // Check access
+        String accessToken = JwtTokenUtil.extractToken(accessHeader);
+        if (!JwtTokenUtil.verifyAccessToken(accessToken, accessRSAPublicKey, Request.Type.GET)) {
+            return new RestResponse(HttpStatus.FORBIDDEN).buildResponse("User does not have the correct rights for this operation.");
         }
 
         var response = storageClient.fileProperties(username, path.substring(1));
@@ -253,11 +311,11 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
     }
 
     @GetMapping("/access/{username}")
-    private ResponseEntity<String> requestAccessToken(@PathVariable String username, @RequestHeader("Authorization") String authorizationHeader) {
+    private ResponseEntity<String> requestAccessToken(@PathVariable String username, @RequestHeader("Authorization") String authorizationHeader, @RequestHeader("Access") String accessHeader) {
         try {
             String authToken = JwtTokenUtil.extractToken(authorizationHeader);
 
-            if (!JwtTokenUtil.verifyJwtToken(authToken, authRSAPublicKey))
+            if (!JwtTokenUtil.verifyAuthToken(authToken, authRSAPublicKey, username))
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid authentication token");
 
             HttpResponse<String> responseEntity = accessClient.requestAccessControlToken(authToken, username);
@@ -270,31 +328,9 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
         }
     }
 
-    public boolean validateTokens(String[] headers, String username) {
-        if (headers == null || headers.length < 1) {
-            return false;   // No headers given
-        }
-
-        String authTokenHeader = headers[0];
-        //String accessTokenHeader = headers[1];
-
-        // Extract the token from the Authorization header
-        String authToken = AuthenticationToken.extractToken(authTokenHeader);
-        //String acessToken = AuthenticationToken.extractToken(accessTokenHeader);
-        Shell.printDebug("Token: " + authToken);
-
-        return AuthenticationToken.verifyToken(authToken, authRSAPublicKey, username);
-    }
-
-
     /**
      * Makes a request to the FAuth module, seeking to obtain the RSA Public Key in order to be able to verify
      * tokens authenticity
-     *
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws NoSuchAlgorithmException
-     * @throws InvalidKeySpecException
      */
     private static void requestAuthRSAPublicKey() {
         try {
@@ -322,19 +358,24 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
     /**
      *  Makes a request to the FAccess module, seeking to obtain the RSA Public Key in order to be able to verify
      *  tokens authenticity
-     *
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws NoSuchAlgorithmException
-     * @throws InvalidKeySpecException
      */
-    private static void requestAccessRSAPublicKey() throws IOException, InterruptedException, NoSuchAlgorithmException, InvalidKeySpecException {
-        HttpResponse<String> responseEntity = accessClient.rsaPublicKeyExchange();
-        HttpStatus status = HttpStatus.resolve(responseEntity.statusCode());
+    private static void requestAccessRSAPublicKey() {
+        try {
+            HttpResponse<String> responseEntity = accessClient.rsaPublicKeyExchange();
+            HttpStatus status = HttpStatus.resolve(responseEntity.statusCode());
 
-        if (Objects.requireNonNull(status).is2xxSuccessful()) {
-            SingleDataRequest key = SingleDataRequest.fromJsonString(responseEntity.body());
-            accessRSAPublicKey = UtilsBase.createPublicKey(key.data(), SIGNATURE_ALGORITHM);
+            if (Objects.requireNonNull(status).is2xxSuccessful()) {
+                SingleDataRequest key = SingleDataRequest.fromJsonString(responseEntity.body());
+                accessRSAPublicKey = UtilsBase.createPublicKey(key.data(), SIGNATURE_ALGORITHM);
+            }
+        } catch (IOException e) {
+            Shell.printError("There was an IO problem during access public key request");
+        } catch (NoSuchAlgorithmException e) {
+            Shell.printError("No such algorithm for access signatures");
+        } catch (InvalidKeySpecException e) {
+            Shell.printError("Invalid key for access signatures");
+        } catch (InterruptedException e) {
+            Shell.printError("Access signature creation was interrupted.");
         }
     }
 }

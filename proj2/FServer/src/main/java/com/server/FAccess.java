@@ -4,7 +4,7 @@ import com.api.rest.RestResponse;
 import com.api.access.PermissionsType;
 import com.api.common.shell.Shell;
 import com.api.common.shell.StorePasswords;
-import com.api.rest.SingleDataRequest;
+import com.api.rest.requests.SingleDataRequest;
 import com.api.services.AccessService;
 import com.api.utils.JwtTokenUtil;
 import com.api.utils.UtilsBase;

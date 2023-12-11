@@ -3,7 +3,8 @@ package com.client.shell.commands;
 import com.api.common.shell.Shell;
 import com.api.common.shell.ShellPreconditions;
 import com.api.rest.requests.PutRequest;
-import com.api.utils.Utils;
+import com.api.utils.JwtTokenUtil;
+import com.api.utils.UtilsBase;
 import com.client.serviceClients.FDispatcherClient;
 
 import java.io.FileInputStream;
@@ -42,7 +43,7 @@ public class PutCommand extends ShellCommand implements Command {
 
         // Get file
         try (InputStream content = new FileInputStream(System.getProperty("user.dir") + "/" + file)) {
-            var response = client.put(username, new PutRequest(path, file, Utils.encodeFileToJSON(content)));
+            var response = client.put(username, new PutRequest(path, file, UtilsBase.encodeFileToJSON(content)), JwtTokenUtil.NO_TOKEN, JwtTokenUtil.NO_TOKEN);
             client.readResponse(response);
         } catch (FileNotFoundException e){
             Shell.printError("No file '" + file + " 'found at the current working directory.");

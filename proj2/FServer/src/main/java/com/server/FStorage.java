@@ -7,7 +7,7 @@ import com.api.rest.requests.CopyRequest;
 import com.api.rest.requests.MkDirRequest;
 import com.api.rest.requests.PutRequest;
 import com.api.services.StorageService;
-import com.api.utils.Utils;
+import com.api.utils.UtilsBase;
 import com.server.fileManager.File;
 import com.server.fileManager.FileManager;
 import com.server.fileManager.Folder;
@@ -82,7 +82,7 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
         }
 
         // Check if path is valid
-        if(Utils.isPathInvalid(path)) {
+        if(UtilsBase.isPathInvalid(path)) {
             return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("The provided path is invalid. Check for incorrect '/' characters.");
         }
 
@@ -108,7 +108,7 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
         }
 
         // Check if path is valid
-        if(Utils.isPathInvalid(mkDirRequest.path())) {
+        if(UtilsBase.isPathInvalid(mkDirRequest.path())) {
             return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("The provided path is invalid. Check for incorrect '/' characters.");
         }
 
@@ -133,7 +133,7 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
         }
 
         // Check if path is valid
-        if(Utils.isPathInvalid(putRequest.path())) {
+        if(UtilsBase.isPathInvalid(putRequest.path())) {
             return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("The provided path is invalid. Check for incorrect '/' characters.");
         }
 
@@ -149,7 +149,7 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
                 .withName(putRequest.fileName())
                 .withAuthor(username)
                 .withPath(putRequest.path())
-                .withContent(Utils.decodeToFile(putRequest.encodedContent()))
+                .withContent(UtilsBase.decodeToFile(putRequest.encodedContent()))
                 .build();
 
         // Update file if it already exists
@@ -179,7 +179,7 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
         }
 
         // Check if path is valid
-        if(Utils.isPathInvalid(path)) {
+        if(UtilsBase.isPathInvalid(path)) {
             return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("The provided path is invalid. Check for incorrect '/' characters.");
         }
 
@@ -198,8 +198,8 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
             return new RestResponse(HttpStatus.CONFLICT).buildResponse("File does not exist.");
         }
 
-        var encodedContent = Utils.encodeFileToJSON(file.getContent());
-        return new RestResponse(HttpStatus.OK).buildResponse("Downloaded file '" + file.getName() + "'." + Utils.generateDownloadCode(file.getName(), encodedContent));
+        var encodedContent = UtilsBase.encodeFileToJSON(file.getContent());
+        return new RestResponse(HttpStatus.OK).buildResponse("Downloaded file '" + file.getName() + "'." + UtilsBase.generateDownloadCode(file.getName(), encodedContent));
     }
 
     @DeleteMapping("/storage/rm/{username}/{*path}")
@@ -214,7 +214,7 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
         }
 
         // Check if path is valid
-        if(Utils.isPathInvalid(path)) {
+        if(UtilsBase.isPathInvalid(path)) {
             return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("The provided path is invalid. Check for incorrect '/' characters.");
         }
 
@@ -296,7 +296,7 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
         }
 
         // Check if path is valid
-        if(Utils.isPathInvalid(path)) {
+        if(UtilsBase.isPathInvalid(path)) {
             return new RestResponse(HttpStatus.BAD_REQUEST).buildResponse("The provided path is invalid. Check for incorrect '/' characters.");
         }
 
@@ -320,7 +320,7 @@ public class FStorage extends FServer implements StorageService<ResponseEntity<S
 
     private String[] separatePathAndFile(String path) {
         String[] tokens = path.split("/");
-        String parentPath = Utils.createPathString(Arrays.copyOfRange(tokens, 0, tokens.length - 1));
+        String parentPath = UtilsBase.createPathString(Arrays.copyOfRange(tokens, 0, tokens.length - 1));
         String fileName = tokens[tokens.length - 1];
         return new String[] {parentPath, fileName};
     }

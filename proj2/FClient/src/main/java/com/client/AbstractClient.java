@@ -2,7 +2,7 @@ package com.client;
 
 import com.api.common.shell.Shell;
 import com.api.rest.RestResponse;
-import com.api.utils.Utils;
+import com.api.utils.UtilsBase;
 import org.springframework.http.HttpStatus;
 
 import javax.net.ssl.SSLContext;
@@ -104,8 +104,8 @@ public abstract class AbstractClient {
     }
 
     protected void writeDownload(String downloadContent) {
-        String[] download = Utils.retrieveDownload(downloadContent);
-        InputStream content = Utils.decodeToFile(download[1]);
+        String[] download = UtilsBase.retrieveDownload(downloadContent);
+        InputStream content = UtilsBase.decodeToFile(download[1]);
         Path outputPath = Path.of(download[0]);
         try {
             // Write file to client path
