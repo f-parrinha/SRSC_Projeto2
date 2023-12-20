@@ -19,5 +19,5 @@ public interface Request<T> {
      * Serializes the request itself into a JSON object
      * @return Json object
      */
-    JsonObject serialize();
+    JsonObject serialize() throws IOException;
 }
