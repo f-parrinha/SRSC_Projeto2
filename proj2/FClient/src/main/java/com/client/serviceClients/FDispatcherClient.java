@@ -143,6 +143,7 @@ public class FDispatcherClient extends AbstractClient implements DispatcherServi
             authToken = pwdResp.token();
 
             // Create Access request
+            System.out.println("TEST"+username);
             HttpResponse<String> accessControlToken = requestAccessControlToken(username);
             HttpStatus httpStatus = HttpStatus.resolve(accessControlToken.statusCode());
 
@@ -163,7 +164,7 @@ public class FDispatcherClient extends AbstractClient implements DispatcherServi
     }
 
     private HttpResponse<String> requestAccessControlToken(String username) {
-        var request = RestRequest.getInstance(baseUri).get("/access/{username}", authToken, accessToken, username);
+        HttpRequest request = RestRequest.getInstance(baseUri).get("/access/{username}", authToken, accessToken, username);
         return sendRequest(request);
     }
 }

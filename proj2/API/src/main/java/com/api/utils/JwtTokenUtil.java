@@ -89,7 +89,7 @@ public class JwtTokenUtil {
                 .setIssuedAt(new Date())
                 .setExpiration(expirationTime)
                 .claim("id", idClaim)
-                .claim("accessLevel", accessLevel.toString())
+                .claim("accessLevel", accessLevel.getValue())
                 .signWith(privateKey, SignatureAlgorithm.RS256)
                 .compact();
     }
@@ -118,15 +118,10 @@ public class JwtTokenUtil {
 
     private static boolean verifyAccess(JWTClaimsSet claimsSet, Request.Type requestType) throws ParseException {
         PermissionsType accessLevel = PermissionsType.fromString(claimsSet.getStringClaim("accessLevel"));
-        switch (requestType) {
-            case GET:
-                return accessLevel.canRead() || accessLevel.canWrite();
-            case POST, PUT, DELETE:
-                return accessLevel.canWrite();
-            default:
-                return false;
-        }
-
+        return switch (requestType) {
+            case GET -> accessLevel.canRead() || accessLevel.canWrite();
+            case POST, PUT, DELETE -> accessLevel.canWrite();
+        };
     }
 
     private static boolean verifyOwner(JWTClaimsSet claimsSet, String owner) {

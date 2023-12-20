@@ -368,14 +368,10 @@ public class FDispatcher extends FServer implements DispatcherService<ResponseEn
                 SingleDataRequest key = SingleDataRequest.fromJsonString(responseEntity.body());
                 accessRSAPublicKey = UtilsBase.createPublicKey(key.data(), SIGNATURE_ALGORITHM);
             }
-        } catch (IOException e) {
-            Shell.printError("There was an IO problem during access public key request");
         } catch (NoSuchAlgorithmException e) {
             Shell.printError("No such algorithm for access signatures");
         } catch (InvalidKeySpecException e) {
             Shell.printError("Invalid key for access signatures");
-        } catch (InterruptedException e) {
-            Shell.printError("Access signature creation was interrupted.");
         }
     }
 }

@@ -19,15 +19,14 @@ public class FAccessClient extends AbstractClient implements AccessService<HttpR
     }
 
     @Override
-    public HttpResponse<String> rsaPublicKeyExchange() throws IOException, InterruptedException {
-        HttpRequest httpRequest = RestRequest.getInstance(baseUri).get("/access/RSAKeyExchange", JwtTokenUtil.NO_TOKEN, JwtTokenUtil.NO_TOKEN);
-        return client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    public HttpResponse<String> rsaPublicKeyExchange() {
+        HttpRequest request = RestRequest.getInstance(baseUri).get("/access/RSAKeyExchange", JwtTokenUtil.NO_TOKEN, JwtTokenUtil.NO_TOKEN);
+        return sendRequest(request);
     }
 
     @Override
-    public HttpResponse<String> requestAccessControlToken(String token, String username) throws IOException, InterruptedException {
-
-        HttpRequest httpRequest = RestRequest.getInstance(baseUri).get("/access/token/{username}", token, username);
-        return client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    public HttpResponse<String> requestAccessControlToken(String token, String username) {
+        HttpRequest request = RestRequest.getInstance(baseUri).get("/access/token/{username}", token, JwtTokenUtil.NO_TOKEN, username);
+        return sendRequest(request);
     }
 }
